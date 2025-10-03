@@ -1,0 +1,420 @@
+{% extends "base.html" %}
+
+{% block title %}Afiliados | Centro de Salud Esperanza{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom:20px; color:#1976d2;">Gestión de Afiliados</h2>
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+/* Tabla */
+#afiliadosTable {
+    border-collapse: separate !important;
+    border-spacing: 0 8px;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
+}
+#afiliadosTable th {
+    background-color: #1976d2;
+    color: white;
+    font-weight: 500;
+    text-align: center;
+    padding: 10px;
+}
+#afiliadosTable td {
+    background: #f9f9f9;
+    text-align: center;
+    padding: 10px;
+}
+#afiliadosTable tr:hover td {
+    background: #e3f2fd;
+}
+
+/* Botón editar */
+.btn-editar {
+    display: inline-block;
+    color: #fff;
+    background: #1976d2;
+    padding: 8px 10px;
+    border-radius: 50%;
+    text-align: center;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+}
+.btn-editar i { font-size: 16px; }
+.btn-editar:hover { background: #1565c0; transform: scale(1.1); }
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+.modal-content {
+    background: #fff;
+    margin: 5% auto;
+    padding: 20px;
+    border-radius: 10px;
+    width: 420px;
+    position: relative;
+}
+.close-modal {
+    position: absolute;
+    top: 10px; right: 15px;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+/* Inputs del form */
+#formEditarAfiliado label {
+    font-weight: 600;
+    display: block;
+    margin-top: 12px;
+    text-align: left;
+}
+#formEditarAfiliado input, #formEditarAfiliado select {
+    width: 100%;
+    padding: 8px 10px;
+    margin-top: 5px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+#formEditarAfiliado button {
+    margin-top: 20px;
+    width: 100%;
+    padding: 10px;
+    background: #1976d2;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+}
+#formEditarAfiliado button:hover {
+    background: #1565c0;
+}
+
+
+/* Badges de servicios mejorados */
+.servicios-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+}
+
+.servicio-badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #1f2937;
+    text-align: center;
+    transition: all 0.3s ease;
+    animation: fadeInUp 0.5s ease;
+    cursor: default;
+    margin: 2px;
+}
+
+/* Animación para los badges */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Verde pastel para servicios cumplidos */
+.servicio-badge { 
+    background: linear-gradient(135deg, #a7f3b7, #6ee7b7);
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.2);
+    border: 1px solid #a7f3d0;
+}
+
+/* Azul pastel para servicios pendientes */
+.badge-pendiente { 
+    background: linear-gradient(135deg, #c7d2fe, #a5b4fc);
+    box-shadow: 0 1px 3px rgba(99, 102, 241, 0.2);
+    border: 1px solid #c7d2fe;
+}
+
+.status-completado { 
+    background: linear-gradient(135deg, #37d651, #6ee76e);
+    border: 1px solid #a7f3d0;
+    color: #1f2937;
+}
+
+.status-pendiente { 
+    background: linear-gradient(135deg, #c7d2fe, #a5b4fc);
+    border: 1px solid #c7d2fe;
+    color: #1f2937;
+}
+
+.status-vacio { 
+    background: linear-gradient(135deg, #e5e7eb, #d1d5db);
+    border: 1px solid #e5e7eb;
+    color: #6b7280;
+}
+</style>
+
+<table id="afiliadosTable" class="display" style="width:100%">
+    <thead>
+        <tr>
+            <th>DNI</th>
+            <th>Apellido Paterno</th>
+            <th>Apellido Materno</th>
+            <th>Nombres</th>
+            <th>Sexo</th>
+            <th>Fecha Nacimiento</th>
+            <th>Servicios Cumplidos</th>
+            <th>Servicios Pendientes</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+</table>
+
+<!-- Modal -->
+<div id="editarModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3 style="margin-bottom:15px;color:#1976d2;">Editar Afiliado</h3>
+        <form id="formEditarAfiliado">
+            <input type="hidden" id="afiliado_id" name="afiliado_id">
+
+            <label for="dni">DNI</label>
+            <input id="dni" name="dni" type="text">
+
+            <label for="apellido_paterno">Apellido Paterno</label>
+            <input id="apellido_paterno" name="apellido_paterno" type="text">
+
+            <label for="apellido_materno">Apellido Materno</label>
+            <input id="apellido_materno" name="apellido_materno" type="text">
+
+            <label for="nombres">Nombres</label>
+            <input id="nombres" name="nombres" type="text">
+
+            <label for="sexo">Sexo</label>
+            <select id="sexo" name="sexo">
+                <option value="">--</option>
+                <option value="M">Masculino</option>
+                <option value="F">Femenino</option>
+            </select>
+
+            <label for="fecha_nacimiento">Fecha de Nacimiento</label>
+            <input id="fecha_nacimiento" name="fecha_nacimiento" type="date">
+
+            <button type="submit">Guardar Cambios</button>
+        </form>
+    </div>
+</div>
+
+
+<script>
+
+$(document).ready(function() {
+    const table = $('#afiliadosTable').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: "{% url 'afiliados_data' %}",
+        columns: [
+            { data: 'dni' },
+            { data: 'apellido_paterno' },
+            { data: 'apellido_materno' },
+            { data: 'nombres' },
+            {
+                data: 'sexo',
+                render: function(data) {
+                    if (data === "Masculino") {
+                        return '<i class="fa-solid fa-person" style="color:#2196f3;" title="Masculino"></i>';
+                    } else if (data === "Femenino") {
+                        return '<i class="fa-solid fa-person-dress" style="color:#e91e63;" title="Femenino"></i>';
+                    }
+                    return '-';
+                }
+            },
+            { data: 'fecha_nacimiento' },
+{ 
+    data: 'servicios_cumplidos', 
+    orderable: false, 
+    searchable: false,
+    render: function(data, type, row) {
+        // Caso cuando no hay datos o es "-" o vacío
+        if (!data || data === '-' || data === '' || data === '0' || data === 0) {
+            return '<span class="status-badge status-vacio" title="Sin servicios cumplidos">-</span>';
+        }
+        
+        // Si es un string que podría contener servicios (con o sin comas)
+        if (typeof data === 'string') {
+            let servicios = [];
+            
+            // Si contiene comas, separarlos
+            if (data.includes(',')) {
+                servicios = data.split(',').map(s => s.trim()).filter(s => s !== '-' && s !== '');
+            } else {
+                // Si es un solo servicio, crear array con ese elemento
+                servicios = [data.trim()];
+            }
+            
+            // Si después de filtrar no hay servicios
+            if (servicios.length === 0) {
+                return '<span class="status-badge status-vacio" title="Sin servicios cumplidos">-</span>';
+            }
+            
+            // Si solo hay un servicio, mostrar el badge individual
+            if (servicios.length === 1) {
+                const servicio = servicios[0];
+                return `<span class="servicio-badge" title="${servicio}">${servicio}</span>`;
+            }
+            
+            // Si hay múltiples servicios
+            const badges = servicios.map(servicio => {
+                return `<span class="servicio-badge" title="${servicio}">${servicio}</span>`;
+            });
+            return `<div class="servicios-container">${badges.join('')}</div>`;
+        }
+        
+        // Si es solo un número (backup por si acaso)
+        return `<span class="status-badge status-completado">${data}</span>`;
+    }
+},
+{ 
+    data: 'servicios_pendientes', 
+    orderable: false, 
+    searchable: false,
+    render: function(data, type, row) {
+        // Caso cuando no hay datos o es "-" o vacío
+        if (!data || data === '-' || data === '' || data === '0' || data === 0) {
+            return '<span class="status-badge status-completado" title="Sin servicios pendientes">0</span>';
+        }
+        
+        // Si es un string que podría contener servicios (con o sin comas)
+        if (typeof data === 'string') {
+            let servicios = [];
+            
+            // Si contiene comas, separarlos
+            if (data.includes(',')) {
+                servicios = data.split(',').map(s => s.trim()).filter(s => s !== '-' && s !== '');
+            } else {
+                // Si es un solo servicio, crear array con ese elemento
+                servicios = [data.trim()];
+            }
+            
+            // Si después de filtrar no hay servicios
+            if (servicios.length === 0) {
+                return '<span class="status-badge status-completado" title="Sin servicios pendientes">0</span>';
+            }
+            
+            // Si solo hay un servicio, mostrar el badge individual
+            if (servicios.length === 1) {
+                const servicio = servicios[0];
+                return `<span class="servicio-badge badge-pendiente" title="${servicio} pendiente">${servicio}</span>`;
+            }
+            
+            // Si hay múltiples servicios
+            const badges = servicios.map(servicio => {
+                return `<span class="servicio-badge badge-pendiente" title="${servicio} pendiente">${servicio}</span>`;
+            });
+            return `<div class="servicios-container">${badges.join('')}</div>`;
+        }
+        
+        // Si es solo un número (backup por si acaso)
+        return `<span class="status-badge status-pendiente">${data}</span>`;
+    }
+},
+
+            {
+                data: null, orderable: false, searchable: false,
+                render: function(data, type, row) {
+                    // mandamos row entero para cargarlo en el modal
+                    return `<button class="btn-editar" data-json='${JSON.stringify(row)}' title="Editar">
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>`;
+                }
+            }
+        ],
+        pageLength: 50
+    });
+
+    // Abrir modal con los datos del afiliado (desde row)
+       // Abrir modal con datos
+    $('#afiliadosTable').on('click', '.btn-editar', function() {
+        const rowData = $(this).data('json');
+
+        $('#afiliado_id').val(rowData.id);
+        $('#dni').val(rowData.dni);
+        $('#apellido_paterno').val(rowData.apellido_paterno);
+        $('#apellido_materno').val(rowData.apellido_materno);
+        $('#nombres').val(rowData.nombres);
+        $('#sexo').val(rowData.sexo_val);  // <-- directo de backend
+        $('#fecha_nacimiento').val(rowData.fecha_nacimiento || "");
+
+        $('#editarModal').fadeIn();
+    });
+
+    // cerrar modal
+    $('.close-modal').on('click', function() {
+        $('#editarModal').fadeOut();
+    });
+    $(window).on('click', function(e) {
+        if ($(e.target).is('#editarModal')) {
+            $('#editarModal').fadeOut();
+        }
+    });
+
+    // Guardar cambios con AJAX + SweetAlert
+    $('#formEditarAfiliado').on('submit', function(e) {
+        e.preventDefault();
+
+        Swal.fire({
+            title: 'Guardando...',
+            text: 'Por favor espere',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        $.ajax({
+            url: "{% url 'editar_afiliado' 0 %}".replace("0", $('#afiliado_id').val()),
+            type: 'POST',
+            data: $(this).serialize(),
+            headers: {'X-CSRFToken': '{{ csrf_token }}'},
+            success: function(data) {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Actualizado!',
+                        text: 'El afiliado fue actualizado correctamente',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    $('#editarModal').fadeOut();
+                    $('#afiliadosTable').DataTable().ajax.reload(null, false);
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Error', text: data.message });
+                }
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error del servidor',
+                    text: xhr.responseJSON?.message || xhr.statusText
+                });
+            }
+        });
+    });
+});
+</script>
+
+{% endblock %}

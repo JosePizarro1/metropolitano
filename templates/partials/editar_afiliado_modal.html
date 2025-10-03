@@ -1,0 +1,194 @@
+    <form id="formEditarAfiliado" action="{% url 'editar_afiliado' afiliado.id %}" method="post">
+        {% csrf_token %}
+        <input type="hidden" id="afiliado_id" name="afiliado_id" value="{{ afiliado.id }}">
+
+        <div class="form-group">
+            <label for="dni">DNI</label>
+            <input id="dni" name="dni" type="text" value="{{ afiliado.dni }}" class="form-control">
+        </div>
+
+        <div class="form-group">
+            <label for="nombres">Nombres</label>
+            <input id="nombres" name="nombres" type="text" value="{{ afiliado.nombres }}" class="form-control">
+        </div>
+
+        <div class="form-group">
+            <label for="apellido_paterno">Apellido Paterno</label>
+            <input id="apellido_paterno" name="apellido_paterno" type="text" value="{{ afiliado.apellido_paterno }}" class="form-control">
+        </div>
+
+        <div class="form-group">
+            <label for="apellido_materno">Apellido Materno</label>
+            <input id="apellido_materno" name="apellido_materno" type="text" value="{{ afiliado.apellido_materno }}" class="form-control">
+        </div>
+
+        <div class="form-group">
+            <label for="sexo">Sexo</label>
+            <select id="sexo" name="sexo" class="form-control">
+                <option value="">--</option>
+                <option value="M" {% if afiliado.sexo == "M" %}selected{% endif %}>Masculino</option>
+                <option value="F" {% if afiliado.sexo == "F" %}selected{% endif %}>Femenino</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="fecha_nacimiento">Fecha de Nacimiento</label>
+            <input id="fecha_nacimiento" name="fecha_nacimiento" type="date" value="{{ afiliado.fecha_nacimiento|date:'Y-m-d' }}" class="form-control">
+        </div>
+        
+        <div class="form-group grid-span-2">
+            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+        </div>
+    </form>
+
+<style>
+    /* --- Contenedor del Formulario --- */
+.form-container {
+    background-color: #ffffff;
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 800px;
+}
+
+.form-container h2 {
+    text-align: center;
+    margin-bottom: 2rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+/* --- Grilla del Formulario --- */
+#formEditarAfiliado {
+    display: grid;
+    /* Por defecto, una columna para celulares */
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+}
+
+/* --- Estilos para Campos (Inputs, Select) --- */
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: 'Poppins', sans-serif;
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+/* Efecto visual al hacer clic en un campo */
+.form-control:focus {
+    outline: none;
+    border-color: #0d6efd; /* Color primario */
+    box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.15);
+}
+
+/* --- Estilo del Botón --- */
+.btn-primary {
+    background: linear-gradient(45deg, #0d6efd, #0d6efd);
+    color: #fff;
+    border: none;
+    padding: 0.9rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    width: 100%;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(13, 110, 253, 0.2);
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(13, 110, 253, 0.3);
+}
+
+.btn-primary:active {
+    transform: translateY(-1px);
+}
+
+/* --- DISEÑO RESPONSIVO --- */
+/* Media Query para pantallas más grandes (tablets y escritorios) */
+@media (min-width: 768px) {
+    #formEditarAfiliado {
+        /* Dos columnas de igual tamaño */
+        grid-template-columns: 1fr 1fr; 
+        /* Espacio entre filas y columnas */
+        gap: 1.5rem 2rem; 
+    }
+
+    /* Clase para que un elemento ocupe las dos columnas */
+    .grid-span-2 {
+        grid-column: 1 / -1;
+    }
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    // Este script se ejecuta cuando el partial es cargado en el modal
+    $('#formEditarAfiliado').on('submit', function(e) {
+        e.preventDefault();
+        const $form = $(this);
+        const url = $form.attr('action');
+
+        // Mostrar loader con SweetAlert
+        Swal.fire({
+            title: 'Guardando cambios...',
+            text: 'Por favor espere',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: $form.serialize(),
+            success: function(data) {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Actualizado!',
+                        text: 'Los cambios se guardaron correctamente',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        // Cerrar modal
+                        $('#editarModal').fadeOut();
+                        // Recargar la tabla sin cambiar de página
+                        $('#afiliadosTable').DataTable().ajax.reload(null, false);
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.message || "Error al actualizar"
+                    });
+                }
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error del servidor',
+                    text: xhr.responseJSON?.message || xhr.statusText
+                });
+            }
+        });
+    });
+</script>

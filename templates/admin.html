@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+
+{% block title %}Panel de Administración{% endblock %}
+
+{% block content %}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<div class="min-h-screen bg-gray-50 p-6">
+    <!-- Header -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-6 border-l-4 border-blue-500">
+        <div class="flex justify-between items-center">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-800 mb-2 flex items-center">
+                    <i class="fas fa-user-shield mr-3 text-blue-500"></i>
+                    Panel de Administración
+                </h2>
+                <p class="text-gray-600">Gestiona usuarios y restablece contraseñas del sistema</p>
+            </div>
+            <div class="bg-blue-100 rounded-full p-3">
+                <i class="fas fa-cogs text-blue-600 text-2xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenido Principal -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Selección de Usuario -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+            <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-users mr-3 text-blue-500"></i>
+                Seleccionar Usuario
+            </h3>
+            
+            <div class="mb-4">
+                <label for="usuarioSelect" class="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <i class="fas fa-search mr-2 text-blue-500"></i>
+                    Buscar Usuario
+                </label>
+                <select id="usuarioSelect" style="width: 100%;">
+                    <option value=""></option>
+                </select>
+            </div>
+
+            <!-- Información del Usuario Seleccionado -->
+            <div id="userInfo" class="hidden bg-blue-50 rounded-xl p-4 border border-blue-200 mt-4">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-blue-100 rounded-full p-2">
+                        <i class="fas fa-user text-blue-600"></i>
+                    </div>
+                    <div>
+                        <h4 id="userName" class="font-semibold text-gray-800"></h4>
+                        <p id="userEmail" class="text-sm text-gray-600"></p>
+                        <p id="userLastLogin" class="text-xs text-gray-500 mt-1"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulario de Contraseña -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+            <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-key mr-3 text-green-500"></i>
+                Restablecer Contraseña
+            </h3>
+
+            <form id="passwordForm">
+                {% csrf_token %}
+                
+                <!-- Nueva Contraseña -->
+                <div class="mb-4">
+                    <label for="nuevaPassword" class="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                        <i class="fas fa-lock mr-2 text-green-500"></i>
+                        Nueva Contraseña
+                    </label>
+                    <div class="relative">
+                        <input type="password" 
+                               id="nuevaPassword" 
+                               name="nueva_password" 
+                               class="w-full rounded-lg border border-gray-300 p-3 pr-10 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
+                               placeholder="Ingrese nueva contraseña"
+                               required>
+                        <button type="button" 
+                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                onclick="togglePassword('nuevaPassword')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div id="passwordStrength" class="mt-2 hidden">
+                        <div class="flex space-x-1">
+                            <div class="h-1 flex-1 bg-gray-200 rounded"></div>
+                            <div class="h-1 flex-1 bg-gray-200 rounded"></div>
+                            <div class="h-1 flex-1 bg-gray-200 rounded"></div>
+                            <div class="h-1 flex-1 bg-gray-200 rounded"></div>
+                        </div>
+                        <p id="strengthText" class="text-xs mt-1"></p>
+                    </div>
+                </div>
+
+                <!-- Confirmar Contraseña -->
+                <div class="mb-6">
+                    <label for="confirmarPassword" class="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                        <i class="fas fa-lock mr-2 text-blue-500"></i>
+                        Confirmar Contraseña
+                    </label>
+                    <div class="relative">
+                        <input type="password" 
+                               id="confirmarPassword" 
+                               name="confirmar_password" 
+                               class="w-full rounded-lg border border-gray-300 p-3 pr-10 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
+                               placeholder="Confirme la contraseña"
+                               required>
+                        <button type="button" 
+                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                onclick="togglePassword('confirmarPassword')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div id="passwordMatch" class="mt-2 hidden">
+                        <p class="text-xs flex items-center">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            <span>Las contraseñas coinciden</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Botón de Envío -->
+                <button type="submit" 
+                        id="submitBtn"
+                        class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                        disabled>
+                    <i class="fas fa-save"></i>
+                    <span>Restablecer Contraseña</span>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+$(document).ready(function() {
+    // Inicializar Select2 para usuarios
+    $('#usuarioSelect').select2({
+        placeholder: "Buscar usuario por nombre o email...",
+        minimumInputLength: 2,
+        ajax: {
+            url: "{% url 'admin_users_search' %}",  // Necesitarás crear esta URL
+            dataType: 'json',
+            delay: 250,
+            data: function(params) {
+                return {
+                    q: params.term
+                };
+            },
+            processResults: function(data) {
+                return {
+                    results: data.map(user => ({
+                        id: user.id,
+                        text: `${user.username} - ${user.email}`,
+                        userData: user
+                    }))
+                };
+            }
+        }
+    });
+
+    // Cuando se selecciona un usuario
+    $('#usuarioSelect').on('change', function() {
+        const selectedOption = $(this).select2('data')[0];
+        
+        if (selectedOption && selectedOption.userData) {
+            const user = selectedOption.userData;
+            $('#userName').text(user.username);
+            $('#userEmail').text(user.email);
+            $('#userLastLogin').text(`Último acceso: ${user.last_login || 'Nunca'}`);
+            $('#userInfo').removeClass('hidden');
+            checkFormValidity();
+        } else {
+            $('#userInfo').addClass('hidden');
+            checkFormValidity();
+        }
+    });
+
+    // Validación en tiempo real de contraseñas
+    $('#nuevaPassword, #confirmarPassword').on('input', function() {
+        validatePasswords();
+        checkFormValidity();
+    });
+
+    // Envío del formulario
+    $('#passwordForm').on('submit', async function(e) {
+        e.preventDefault();
+        
+        const userId = $('#usuarioSelect').val();
+        const nuevaPassword = $('#nuevaPassword').val();
+        const confirmarPassword = $('#confirmarPassword').val();
+
+        if (!validatePasswords()) {
+            return;
+        }
+
+        // Confirmación con SweetAlert
+        const result = await Swal.fire({
+            title: '¿Restablecer contraseña?',
+            html: `Estás a punto de cambiar la contraseña de <strong>${$('#userName').text()}</strong>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#10b981',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Sí, restablecer',
+            cancelButtonText: 'Cancelar',
+            background: '#f8fafc',
+            color: '#1f2937'
+        });
+
+        if (result.isConfirmed) {
+            await changePassword(userId, nuevaPassword);
+        }
+    });
+});
+
+// Función para mostrar/ocultar contraseña
+function togglePassword(inputId) {
+    const input = document.getElementById(inputId);
+    const icon = input.nextElementSibling.querySelector('i');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+    } else {
+        input.type = 'password';
+        icon.className = 'fas fa-eye';
+    }
+}
+
+// Validar que las contraseñas coincidan
+function validatePasswords() {
+    const password = $('#nuevaPassword').val();
+    const confirm = $('#confirmarPassword').val();
+    const matchDiv = $('#passwordMatch');
+    
+    if (password && confirm) {
+        if (password === confirm) {
+            matchDiv.removeClass('hidden').addClass('text-green-600').removeClass('text-red-600');
+            matchDiv.find('i').removeClass('fa-times-circle').addClass('fa-check-circle');
+            matchDiv.find('span').text('Las contraseñas coinciden');
+            return true;
+        } else {
+            matchDiv.removeClass('hidden').removeClass('text-green-600').addClass('text-red-600');
+            matchDiv.find('i').removeClass('fa-check-circle').addClass('fa-times-circle');
+            matchDiv.find('span').text('Las contraseñas no coinciden');
+            return false;
+        }
+    }
+    
+    matchDiv.addClass('hidden');
+    return false;
+}
+
+// Verificar si el formulario es válido
+function checkFormValidity() {
+    const userId = $('#usuarioSelect').val();
+    const password = $('#nuevaPassword').val();
+    const confirm = $('#confirmarPassword').val();
+    const isValid = userId && password && confirm && (password === confirm);
+    
+    $('#submitBtn').prop('disabled', !isValid);
+}
+
+// Función para cambiar contraseña con fetch
+async function changePassword(userId, newPassword) {
+    try {
+        const response = await fetch("{% url 'admin_change_password' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({
+                user_id: userId,
+                new_password: newPassword
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            await Swal.fire({
+                icon: 'success',
+                title: '¡Contraseña actualizada!',
+                text: 'La contraseña se ha restablecido correctamente',
+                confirmButtonColor: '#10b981',
+                background: '#f8fafc',
+                color: '#1f2937'
+            });
+            
+            // Limpiar formulario
+            $('#passwordForm')[0].reset();
+            $('#usuarioSelect').val(null).trigger('change');
+            $('#userInfo').addClass('hidden');
+            $('#submitBtn').prop('disabled', true);
+        } else {
+            throw new Error(data.message || 'Error al cambiar la contraseña');
+        }
+    } catch (error) {
+        await Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.message,
+            confirmButtonColor: '#ef4444',
+            background: '#f8fafc',
+            color: '#1f2937'
+        });
+    }
+}
+</script>
+
+<style>
+/* Estilos para Select2 */
+.select2-container--default .select2-selection--single {
+    border: 2px solid #e5e7eb !important;
+    border-radius: 0.75rem !important;
+    padding: 0.75rem !important;
+    height: auto !important;
+}
+
+.select2-container--default .select2-selection--single:focus {
+    border-color: #3b82f6 !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 100% !important;
+}
+</style>
+{% endblock %}

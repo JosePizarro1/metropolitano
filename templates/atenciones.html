@@ -1,0 +1,464 @@
+{% extends "base.html" %}
+{% block title %}Gestión de Atenciones{% endblock %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<div class="min-h-screen bg-gray-50 p-6">
+    <!-- Header -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-6 border-l-4 border-blue-500">
+        <div class="flex justify-between items-center">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">Gestión de Atenciones</h2>
+                <p class="text-gray-600 flex items-center">
+                    <i class="fas fa-notes-medical mr-2 text-blue-500"></i>
+                    Busque y gestione las atenciones médicas de los afiliados
+                </p>
+            </div>
+            <div class="bg-blue-100 rounded-full p-3">
+                <i class="fas fa-heartbeat text-blue-600 text-2xl"></i>
+            </div>
+        </div>
+    </div>
+
+<!-- 🔍 Buscador de afiliado -->
+<div class="bg-white rounded-2xl shadow-lg p-6 mb-6 border border-gray-100">
+    <div class="flex items-end gap-4">
+        <div class="flex-1">
+            <label for="afiliadoSelect" class="block text-lg font-semibold text-gray-700 mb-3 flex items-center">
+                <i class="fas fa-search mr-3 text-blue-500 bg-blue-100 p-2 rounded-lg"></i>
+                Buscar Afiliado
+            </label>
+            <select id="afiliadoSelect" style="width: 100%;"></select>
+        </div>
+        <div class="mb-1">
+            <button id="btnBuscar" class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center space-x-3 text-lg whitespace-nowrap h-[54px]">
+                <i class="fas fa-search"></i>
+                <span>Buscar</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+    <!-- 📋 Tabla de atenciones -->
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-5">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <div class="bg-white bg-opacity-20 p-2 rounded-lg">
+                        <i class="fa-solid fa-clock-rotate-left text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-white font-bold text-xl">Historial de Atenciones</h3>
+                        <p class="text-blue-100 text-sm">Registro completo de atenciones médicas</p>
+                    </div>
+                </div>
+                <button id="btnNuevaAtencion" class="bg-white text-blue-600 hover:bg-gray-50 font-semibold py-3 px-5 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center space-x-3">
+                    <i class="fas fa-plus"></i>
+                    <span>Nueva Atención</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="p-6">
+            <div class="overflow-hidden rounded-xl border border-gray-200">
+                <table class="min-w-full divide-y divide-gray-200" id="tablaAtenciones">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-stethoscope text-blue-500"></i>
+                                    <span>Servicio</span>
+                                </div>
+                            </th>
+                            <th class="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-calendar text-green-500"></i>
+                                    <span>Fecha</span>
+                                </div>
+                            </th>
+                            <th class="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-clipboard text-purple-500"></i>
+                                    <span>Observaciones</span>
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr id="empty-state">
+                            <td colspan="3" class="px-6 py-16 text-center">
+                                <div class="flex flex-col items-center justify-center text-gray-400">
+                                    <i class="fas fa-inbox text-5xl mb-4"></i>
+                                    <p class="text-xl font-medium mb-2">No hay datos para mostrar</p>
+                                    <p class="text-sm">Seleccione un afiliado para ver su historial de atenciones</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 🟢 Modal Registrar Atención -->
+<div class="modal fade" id="atencionModal" tabindex="-1">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content border-0 shadow-2xl rounded-xl">
+      <form id="formAtencion">
+        {% csrf_token %}
+        <div class="modal-header bg-gradient-to-r from-blue-500 to-blue-600 text-white px-5 py-4 rounded-t-xl">
+          <h5 class="modal-title text-lg font-bold flex items-center space-x-2">
+            <i class="fas fa-plus-circle"></i>
+            <span>Nueva Atención</span>
+          </h5>
+          <button type="button" class="text-white opacity-80 hover:opacity-100 transition-opacity text-sm" data-bs-dismiss="modal">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="modal-body p-5 space-y-4 bg-white">
+          <!-- Afiliado -->
+          <div>
+            <label for="afiliadoModal" class="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+              <i class="fas fa-user mr-2 text-blue-500 text-sm"></i>
+              Afiliado
+            </label>
+            <select id="afiliadoModal" name="afiliado" style="width:100%;" required></select>
+          </div>
+
+          <!-- Servicio -->
+          <div>
+            <label for="servicio" class="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+              <i class="fas fa-stethoscope mr-2 text-green-500 text-sm"></i>
+              Servicio
+            </label>
+            <select name="servicio" id="servicio" class="w-full rounded-lg border border-gray-300 p-2.5 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all duration-200 text-sm" required>
+                {% for s in servicios %}
+                  <option value="{{ s.id }}">{{ s.nombre }}</option>
+                {% endfor %}
+            </select>
+          </div>
+
+          <!-- Observaciones -->
+          <div>
+            <label for="observaciones" class="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+              <i class="fas fa-clipboard mr-2 text-purple-500 text-sm"></i>
+              Observaciones
+            </label>
+            <textarea name="observaciones" id="observaciones" rows="3" class="w-full rounded-lg border border-gray-300 p-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all duration-200 resize-none text-sm" placeholder="Observaciones de la atención..."></textarea>
+          </div>
+        </div>
+        
+        <div class="modal-footer bg-gray-50 px-5 py-4 rounded-b-xl border-t border-gray-200">
+          <div class="flex flex-col sm:flex-row gap-2 w-full">
+            <button type="submit" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2.5 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 text-sm order-2 sm:order-1">
+              <i class="fas fa-save text-xs"></i>
+              <span>Guardar</span>
+            </button>
+            <button type="button" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-semibold py-2.5 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 text-sm order-1 sm:order-2" data-bs-dismiss="modal">
+              <i class="fas fa-times text-xs"></i>
+              <span>Cancelar</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<style>
+/* Mantener los estilos de Select2 existentes */
+#afiliadoSelect {
+    border: 2px solid #e5e7eb !important;
+    border-radius: 12px !important;
+    padding: 12px !important;
+    transition: all 0.3s ease !important;
+}
+
+#afiliadoSelect:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Mejorar la tabla */
+#tablaAtenciones tbody tr:hover {
+    background-color: #f8fafc !important;
+    transform: translateX(4px);
+    transition: all 0.2s ease;
+}
+
+/* Asegurar que los estilos de Bootstrap no interfieran */
+.card {
+    all: unset;
+}
+
+.card-body {
+    all: unset;
+}
+
+.card-header {
+    all: unset;
+}
+
+.btn {
+    all: unset;
+}
+
+.table-striped {
+    all: unset;
+}
+</style>
+<!-- JS -->
+<script>
+$(document).ready(function() {
+    // 🔹 Select2 buscador de afiliados (principal)
+    $('#afiliadoSelect').select2({
+        placeholder: "Buscar por DNI o nombre...",
+        minimumInputLength: 2,
+        ajax: {
+            url: "{% url 'afiliados_search' %}",
+            dataType: 'json',
+            delay: 250,
+            data: function(params) { return { q: params.term }; },
+            processResults: function(data) {
+                return {
+                    results: data.map(a => ({
+                        id: a.id,
+                        text: `${a.dni} - ${a.nombre}`
+                    }))
+                };
+            }
+        }
+    });
+    // 🔹 Select2 dentro del modal (con dropdownParent)
+    $('#afiliadoModal').select2({
+        placeholder: "Buscar por DNI o nombre...",
+        minimumInputLength: 2,
+        dropdownParent: $('#atencionModal'),  // ✅ aquí el truco
+        ajax: {
+            url: "{% url 'afiliados_search' %}",
+            dataType: 'json',
+            delay: 250,
+            data: function(params) { return { q: params.term }; },
+            processResults: function(data) {
+                return {
+                    results: data.map(a => ({
+                        id: a.id,
+                        text: `${a.dni} - ${a.nombre}`
+                    }))
+                };
+            }
+        }
+    });
+// 🔹 Botón Buscar Afiliado
+$('#btnBuscar').on('click', function() {
+    let id = $('#afiliadoSelect').val();
+    console.log("Afiliado seleccionado:", id);
+
+    if (!id) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Atención',
+            text: 'Seleccione un afiliado antes de buscar',
+            confirmButtonColor: '#3b82f6',
+            background: '#f8fafc',
+            color: '#1f2937'
+        });
+        return;
+    }
+
+    // Mostrar loader bonito
+    Swal.fire({
+        title: '<div class="flex flex-col items-center">' +
+               '<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>' +
+               '<p class="text-lg font-semibold text-gray-700">Buscando atenciones...</p>' +
+               '</div>',
+        html: '<p class="text-gray-600 mt-2">Obteniendo historial médico del afiliado</p>',
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        background: '#f8fafc'
+    });
+
+    $.get(`/atenciones/list/${id}/`)
+        .done(function(data) {
+            let rows = '';
+            
+            if (data && data.length > 0) {
+                data.forEach(a => {
+                    rows += `<tr class="hover:bg-blue-50 transition-all duration-200 border-b border-gray-100">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="bg-blue-100 rounded-xl p-3">
+                                    <i class="fas fa-stethoscope text-blue-600 text-sm"></i>
+                                </div>
+                                <div>
+                                    <span class="block font-semibold text-gray-900">${a.servicio}</span>
+                                    <span class="text-xs text-gray-500">Servicio médico</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="bg-green-100 rounded-xl p-3">
+                                    <i class="fas fa-calendar text-green-600 text-sm"></i>
+                                </div>
+                                <div>
+                                    <span class="block font-semibold text-gray-900">${a.fecha}</span>
+                                    <span class="text-xs text-gray-500">Fecha de atención</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="bg-purple-100 rounded-xl p-3">
+                                    <i class="fas fa-clipboard text-purple-600 text-sm"></i>
+                                </div>
+                                <div class="max-w-xs">
+                                    <span class="block font-medium text-gray-900">${a.observaciones || 'Sin observaciones'}</span>
+                                    <span class="text-xs text-gray-500">Notas médicas</span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>`;
+                });
+                $('#empty-state').hide();
+            } else {
+                rows = `<tr id="empty-state">
+                    <td colspan="3" class="px-6 py-16 text-center">
+                        <div class="flex flex-col items-center justify-center text-gray-400">
+                            <i class="fas fa-clipboard-list text-5xl mb-4"></i>
+                            <p class="text-xl font-semibold mb-2">No se encontraron atenciones</p>
+                            <p class="text-sm">Este afiliado no tiene atenciones registradas en el sistema</p>
+                            <button id="btnNuevaAtencionFromEmpty" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-200 flex items-center space-x-2">
+                                <i class="fas fa-plus"></i>
+                                <span>Registrar primera atención</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+            }
+
+            $('#tablaAtenciones tbody').html(rows);
+            
+            // Agregar evento al botón de registrar desde empty state
+            $('#btnNuevaAtencionFromEmpty').on('click', function() {
+                $('#btnNuevaAtencion').click();
+            });
+
+            Swal.close();
+
+            if (data.length === 0) {
+                Swal.fire({
+                    icon: 'info',
+                    title: '<div class="flex-col items-center space-x-2">' +
+                           '<i class="fas fa-info-circle text-blue-500"></i>' +
+                           '<span>Sin registros</span>' +
+                           '</div>',
+                    html: '<p class="text-gray-600">Este afiliado no tiene atenciones médicas registradas.</p>' +
+                          '<p class="text-sm text-gray-500 mt-2">Puede registrar la primera atención usando el botón "Nueva Atención"</p>',
+                    confirmButtonColor: '#3b82f6',
+                    background: '#f8fafc',
+                    color: '#1f2937'
+                });
+            } else {
+                // Mostrar notificación de éxito con contador
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    background: '#10b981',
+                    color: 'white',
+                    iconColor: 'white'
+                });
+                
+                Toast.fire({
+                    icon: 'success',
+                    title: `<div class="flex items-center space-x-2">
+                               <i class="fas fa-check-circle"></i>
+                               <span>Se encontraron ${data.length} atenciones</span>
+                            </div>`
+                });
+            }
+        })
+        .fail(function(xhr) {
+            Swal.fire({
+                icon: 'error',
+                title: '<div class="flex items-center space-x-2">' +
+                       '<i class="fas fa-exclamation-triangle"></i>' +
+                       '<span>Error al buscar</span>' +
+                       '</div>',
+                html: '<p class="text-gray-600">' + (xhr.responseJSON?.message || 'No se pudo obtener el historial de atenciones') + '</p>',
+                confirmButtonColor: '#ef4444',
+                background: '#f8fafc',
+                color: '#1f2937'
+            });
+        });
+});
+
+    // 🔹 Abrir modal
+    $('#btnNuevaAtencion').on('click', function() {
+        $('#formAtencion')[0].reset();
+        $('#afiliadoModal').val(null).trigger("change");
+        $('#atencionModal').modal('show');
+    });
+
+$('#formAtencion').on('submit', async function(e) {
+    e.preventDefault();
+
+    let form = this;
+    let formData = new FormData(form);
+
+    // Loader de SweetAlert
+    Swal.fire({
+        title: 'Guardando...',
+        text: 'Por favor espera',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    try {
+        let response = await fetch("{% url 'atenciones_create' %}", {
+            method: "POST",
+            body: formData,
+            headers: { "X-CSRFToken": formData.get("csrfmiddlewaretoken") }
+        });
+
+        let data = await response.json();
+
+        if (data.success) {
+            Swal.close(); // cerrar loader
+            Swal.fire({
+                icon: 'success',
+                title: '¡Éxito!',
+                text: 'La atención se registró correctamente'
+            });
+
+            $('#atencionModal').modal('hide');
+        } else {
+            Swal.close();
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message || 'No se pudo guardar la atención'
+            });
+        }
+    } catch (error) {
+        Swal.close();
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Ocurrió un problema de conexión'
+        });
+        console.error("Error en fetch:", error);
+    }
+});
+
+
+});
+</script>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Cargar Afiliados desde Excel</h2>
+
+<form id="formExcel" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="file" name="archivo_excel" accept=".xlsx" required>
+    <button type="submit">Cargar Afiliados</button>
+</form>
+
+<div id="loader" style="display:none; margin-top:10px;">Cargando... ⏳</div>
+<div id="resultado" style="margin-top:10px;"></div>
+
+{% if messages %}
+    {% for message in messages %}
+        <p style="color:green">{{ message }}</p>
+    {% endfor %}
+{% endif %}
+
+<script>
+document.getElementById("formExcel").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const form = e.target;
+    const formData = new FormData(form);
+    const loader = document.getElementById("loader");
+    const resultado = document.getElementById("resultado");
+
+    loader.style.display = "block";
+    resultado.innerHTML = "";
+
+    fetch("{% url 'cargar_excel' %}", {
+        method: "POST",
+        body: formData,
+    })
+    .then(res => res.text())  // Devuelve el HTML del redirect
+    .then(() => {
+        loader.style.display = "none";
+        resultado.innerHTML = "Archivo cargado correctamente ✅";
+        form.reset();
+    })
+    .catch(err => {
+        loader.style.display = "none";
+        resultado.innerHTML = "Error al cargar los afiliados";
+        console.error(err);
+    });
+});
+</script>
+{% endblock %}

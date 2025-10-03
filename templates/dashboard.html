@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Centro de Salud Esperanza{% endblock %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<div class="min-h-screen bg-gray-50 p-6">
+    <!-- Header del Dashboard -->
+    <div class="mb-8">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">Dashboard General</h1>
+                <p class="text-gray-600 flex items-center">
+                    <i class="fas fa-heartbeat mr-2 text-blue-500"></i>
+                    Bienvenido, {{ request.user.username }} - Resumen del sistema de salud
+                </p>
+            </div>
+            <div class="mt-4 lg:mt-0">
+                <span class="bg-blue-100 text-blue-800 text-sm font-semibold px-3 py-1 rounded-full">
+                    Año Actual: {{ current_year }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid de Estadísticas Principales -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Total Afiliados -->
+        <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500 hover:shadow-xl transition-shadow duration-300">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-semibold text-gray-500 uppercase">Total Afiliados</p>
+                    <p class="text-3xl font-bold text-gray-800 mt-2">{{ total_afiliados }}</p>
+                </div>
+                <div class="bg-blue-100 rounded-full p-3">
+                    <i class="fas fa-users text-blue-600 text-xl"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm text-green-600">
+                <i class="fas fa-chart-line mr-1"></i>
+                <span>Registrados en sistema</span>
+            </div>
+        </div>
+
+        <!-- Atenciones Este Año -->
+        <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500 hover:shadow-xl transition-shadow duration-300">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-semibold text-gray-500 uppercase">Atenciones {{ current_year }}</p>
+                    <p class="text-3xl font-bold text-gray-800 mt-2">{{ atenciones_este_anio }}</p>
+                </div>
+                <div class="bg-green-100 rounded-full p-3">
+                    <i class="fas fa-stethoscope text-green-600 text-xl"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm text-blue-600">
+                <i class="fas fa-calendar-alt mr-1"></i>
+                <span>Servicios este año</span>
+            </div>
+        </div>
+
+        <!-- Total Atenciones -->
+        <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500 hover:shadow-xl transition-shadow duration-300">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-semibold text-gray-500 uppercase">Total Atenciones</p>
+                    <p class="text-3xl font-bold text-gray-800 mt-2">{{ total_atenciones }}</p>
+                </div>
+                <div class="bg-purple-100 rounded-full p-3">
+                    <i class="fas fa-notes-medical text-purple-600 text-xl"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm text-purple-600">
+                <i class="fas fa-database mr-1"></i>
+                <span>Histórico general</span>
+            </div>
+        </div>
+
+        <!-- Afiliados Activos -->
+        <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-orange-500 hover:shadow-xl transition-shadow duration-300">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-semibold text-gray-500 uppercase">Afiliados Activos</p>
+                    <p class="text-3xl font-bold text-gray-800 mt-2">{{ afiliados_con_servicios }}</p>
+                </div>
+                <div class="bg-orange-100 rounded-full p-3">
+                    <i class="fas fa-user-check text-orange-600 text-xl"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm text-orange-600">
+                <i class="fas fa-bell mr-1"></i>
+                <span>Con servicios en {{ current_year }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Segunda Fila: Módulos y Servicios Populares -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Módulos del Sistema -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-th-large mr-3 text-blue-500"></i>
+                Módulos del Sistema
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Gestión de Afiliados -->
+                <a href="{% url 'afiliados' %}" class="group bg-gray-50 hover:bg-blue-50 rounded-xl p-5 border border-gray-200 hover:border-blue-300 transition-all duration-300 transform hover:-translate-y-1">
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-blue-100 group-hover:bg-blue-200 rounded-lg p-3 transition-colors duration-300">
+                            <i class="fas fa-users text-blue-600 text-lg"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-800 group-hover:text-blue-700">Gestión de Afiliados</h4>
+                            <p class="text-sm text-gray-600 mt-1">Administrar pacientes</p>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Atenciones Médicas -->
+                <a href="{% url 'atenciones' %}" class="group bg-gray-50 hover:bg-green-50 rounded-xl p-5 border border-gray-200 hover:border-green-300 transition-all duration-300 transform hover:-translate-y-1">
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-green-100 group-hover:bg-green-200 rounded-lg p-3 transition-colors duration-300">
+                            <i class="fas fa-notes-medical text-green-600 text-lg"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-800 group-hover:text-green-700">Atenciones Médicas</h4>
+                            <p class="text-sm text-gray-600 mt-1">Registrar servicios</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Servicios Más Populares -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-chart-bar mr-3 text-green-500"></i>
+                Servicios Más Solicitados {{ current_year }}
+            </h3>
+            <div class="space-y-4">
+                {% for servicio in servicios_populares %}
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-green-50 transition-colors duration-200">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-green-100 rounded-lg p-2">
+                            <i class="fas fa-stethoscope text-green-600 text-sm"></i>
+                        </div>
+                        <span class="font-medium text-gray-800">{{ servicio.nombre }}</span>
+                    </div>
+                    <span class="bg-blue-100 text-blue-800 text-sm font-semibold px-3 py-1 rounded-full">
+                        {{ servicio.total_atenciones }} atenciones
+                    </span>
+                </div>
+                {% empty %}
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-chart-bar text-3xl mb-3"></i>
+                    <p>No hay datos de servicios este año</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Últimas Atenciones -->
+    <div class="bg-white rounded-xl shadow-lg p-6">
+        <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+            <i class="fas fa-history mr-3 text-purple-500"></i>
+            Últimas Atenciones Registradas
+        </h3>
+        <div class="overflow-hidden rounded-lg border border-gray-200">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Afiliado</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Servicio</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Fecha</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Observaciones</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for atencion in ultimas_atenciones %}
+                    <tr class="hover:bg-gray-50 transition-colors duration-150">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="bg-blue-100 rounded-lg p-2 mr-3">
+                                    <i class="fas fa-user text-blue-600 text-sm"></i>
+                                </div>
+                                <span class="text-sm font-medium text-gray-900">{{ atencion.afiliado }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded">{{ atencion.servicio.nombre }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {{ atencion.fecha_atencion|date:"d/m/Y H:i" }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
+                            {{ atencion.observaciones|default:"Sin observaciones" }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="px-6 py-12 text-center text-gray-500">
+                            <i class="fas fa-inbox text-3xl mb-3"></i>
+                            <p>No hay atenciones registradas</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
