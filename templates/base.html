@@ -438,7 +438,7 @@
         <div class="sidebar-header">
             <h2>Centro de Salud Esperanza</h2>
         </div>
-        
+
         <div class="user-info">
             <div class="user-avatar">
                 {{ request.user.username|slice:":1"|upper }}
@@ -448,32 +448,39 @@
                 <span>Administrador</span>
             </div>
         </div>
-        
-    <div class="sidebar-menu">
-        <a href="{% url 'dashboard' %}" class="menu-item">
-            <i class="fas fa-home"></i>
-            <span>Dashboard</span>
-        </a>
-        <a href="{% url 'afiliados' %}" class="menu-item">
-            <i class="fas fa-users"></i>
-            <span>Afiliados</span>
-        </a>
-        <a href="{% url 'atenciones' %}" class="menu-item">
-            <i class="fas fa-notes-medical"></i>
-            <span>Atenciones</span>
-        </a>
-        <!-- Perfil accesible a cualquier usuario -->
-        <a href="{% url 'settings' %}" class="menu-item">
-            <i class="fas fa-user"></i>
-            <span>Perfil</span>
-        </a>
-        {% if request.user.is_superuser %}
-        <a href="{% url 'admin_panel' %}" class="menu-item">
-            <i class="fas fa-user-shield"></i>
-            <span>Admin</span>
-        </a>
-        {% endif %}
-    </div>
+
+<div class="sidebar-menu">
+    <a href="{% url 'dashboard' %}" class="menu-item">
+        <i class="fas fa-home"></i>
+        <span>Dashboard</span>
+    </a>
+    <a href="{% url 'afiliados' %}" class="menu-item">
+        <i class="fas fa-users"></i>
+        <span>Afiliados</span>
+    </a>
+    <a href="{% url 'atenciones' %}" class="menu-item">
+        <i class="fas fa-notes-medical"></i>
+        <span>Atenciones</span>
+    </a>
+    <a href="{% url 'settings' %}" class="menu-item">
+        <i class="fas fa-user"></i>
+        <span>Perfil</span>
+    </a>
+
+    <!-- 🔹 Nuevo menú accesible para todos -->
+    <a href="{% url 'reportes' %}" class="menu-item">
+        <i class="fas fa-chart-bar"></i>
+        <span>Reportes</span>
+    </a>
+
+    {% if request.user.is_superuser %}
+    <a href="{% url 'admin_panel' %}" class="menu-item">
+        <i class="fas fa-user-shield"></i>
+        <span>Admin</span>
+    </a>
+    {% endif %}
+</div>
+
 
 
 
@@ -514,10 +521,10 @@
         document.addEventListener('click', function(event) {
             const sidebar = document.getElementById('sidebar');
             const toggleBtn = document.getElementById('toggleSidebar');
-            
-            if (window.innerWidth <= 768 && 
-                !sidebar.contains(event.target) && 
-                !toggleBtn.contains(event.target) && 
+
+            if (window.innerWidth <= 768 &&
+                !sidebar.contains(event.target) &&
+                !toggleBtn.contains(event.target) &&
                 sidebar.classList.contains('active')) {
                 sidebar.classList.remove('active');
             }

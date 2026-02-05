@@ -13,7 +13,8 @@ SECRET_KEY = 'django-insecure-d2va=@iyv88u(ni938!#18@5(d@3q^(#dp9*x-i(o3)a^q)ba2
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["mcais.pythonanywhere.com", "www.mcais.pythonanywhere.com"]
+
 LOGIN_URL = "/"            # si no está logueado, lo manda al login
 LOGIN_REDIRECT_URL = "/dashboard/"   # después de loguearse lo manda al dashboard
 LOGOUT_REDIRECT_URL = "/"  # si hace logout, vuelve al login
@@ -72,8 +73,15 @@ WSGI_APPLICATION = 'saludesperanza.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'MCAIS$default',       # tu base de datos
+        'USER': 'MCAIS',             # tu usuario MySQL
+        'PASSWORD': '123456mcais-',
+        'HOST': 'MCAIS.mysql.pythonanywhere-services.com',  # host en PythonAnywhere
+        'PORT': '3306',              # puerto por defecto
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        },
     }
 }
 

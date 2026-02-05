@@ -19,6 +19,11 @@ class Afiliado(models.Model):
     fecha_nacimiento = models.DateField(blank=True, null=True)
     sexo = models.CharField(max_length=1, choices=SEXO_CHOICES, blank=True, null=True)
 
+    # Nuevos campos de observaciones: nullables en DB, blank en forms, default vacío
+    observacion_enfermeria = models.TextField(blank=True, null=True, default="")
+    observacion_odontologia = models.TextField(blank=True, null=True, default="")
+    observacion_obstetricia = models.TextField(blank=True, null=True, default="")
+
     created_at = models.DateTimeField(auto_now_add=True)  # registro en sistema
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -59,6 +64,7 @@ class Servicio(models.Model):
         return self.nombre
 
 
+
 # -----------------------------
 # MODELO ATENCION
 # -----------------------------
@@ -67,9 +73,22 @@ class Atencion(models.Model):
     servicio = models.ForeignKey(Servicio, on_delete=models.CASCADE, related_name="atenciones")
     fecha_atencion = models.DateTimeField(auto_now_add=True)
     observaciones = models.TextField(blank=True, null=True)
+    # 🔑 Nuevo campo: quién registró la atención
+    registrado_por = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Registrado por"
+    )
 
     class Meta:
         unique_together = ("afiliado", "servicio", "fecha_atencion")  # evita duplicados exactos
 
     def __str__(self):
         return f"{self.afiliado} - {self.servicio} ({self.fecha_atencion.date()})"
+
+    def save_model(self, request, obj, form, change):
+        if not obj.registrado_por:
+            obj.registrado_por = request.user
+        super().save_model(request, obj, form, change)

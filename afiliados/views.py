@@ -35,7 +35,257 @@ import openpyxl
 import re
 from django.contrib.auth.hashers import make_password
 from django.db import transaction
+from django.utils import timezone
 
+@csrf_exempt
+@login_required
+def guardar_observacion(request, afiliado_id):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Método no permitido'}, status=405)
+
+    try:
+        afiliado = Afiliado.objects.get(id=afiliado_id)
+        data = json.loads(request.body)
+        campo = data.get('campo')
+        valor = data.get('valor', '')
+
+        # Validar campo permitido
+        campos_permitidos = [
+            'observacion_enfermeria',
+            'observacion_odontologia',
+            'observacion_obstetricia'
+        ]
+        if campo not in campos_permitidos:
+            return JsonResponse({'success': False, 'message': 'Campo no válido'}, status=400)
+
+        # Actualizar el campo dinámicamente
+        setattr(afiliado, campo, valor)
+        afiliado.save()
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Observación {campo.replace("observacion_", "")} actualizada correctamente'
+        })
+    except Afiliado.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Afiliado no encontrado'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+@login_required
+@csrf_exempt
+@require_http_methods(["POST"])
+def eliminar_servicio_cumplido(request, afiliado_id):
+    """
+    View para eliminar un servicio marcado como cumplido (eliminar la atención)
+    Solo elimina atenciones del año actual
+    """
+    try:
+        data = json.loads(request.body)
+        servicio_nombre = data.get('servicio')
+
+        if not servicio_nombre:
+            return JsonResponse({
+                'success': False,
+                'message': 'Nombre del servicio es requerido'
+            }, status=400)
+
+        # Obtener afiliado y servicio
+        try:
+            afiliado = Afiliado.objects.get(id=afiliado_id)
+            servicio = Servicio.objects.get(nombre=servicio_nombre)
+        except (Afiliado.DoesNotExist, Servicio.DoesNotExist):
+            return JsonResponse({
+                'success': False,
+                'message': 'Afiliado o servicio no encontrado'
+            }, status=404)
+
+        # Obtener el año actual
+        año_actual = timezone.now().year
+
+        # Buscar la atención más reciente de ESTE AÑO para este servicio y afiliado
+        atencion = Atencion.objects.filter(
+            afiliado=afiliado,
+            servicio=servicio,
+            fecha_atencion__year=año_actual  # 🔥 Solo del año actual
+        ).order_by('-fecha_atencion').first()
+
+        if not atencion:
+            return JsonResponse({
+                'success': False,
+                'message': f'No se encontró una atención del año {año_actual} para eliminar'
+            }, status=404)
+
+        # Guardar información para el mensaje antes de eliminar
+        servicio_nombre = atencion.servicio.nombre
+        fecha_atencion = atencion.fecha_atencion.date()
+
+        # Eliminar la atención
+        atencion.delete()
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Servicio {servicio_nombre} del {fecha_atencion} eliminado correctamente'
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'message': 'Error en el formato de datos JSON'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error del servidor: {str(e)}'
+        }, status=500)
+
+@login_required
+@csrf_exempt
+@require_http_methods(["POST"])
+def marcar_servicio_cumplido(request, afiliado_id):
+    """
+    View para marcar un servicio como cumplido para un afiliado
+    y registrar quién lo hizo (usuario autenticado)
+    """
+    try:
+        data = json.loads(request.body)
+        servicio_nombre = data.get('servicio')
+        observaciones = data.get('observaciones', '')
+
+        if not servicio_nombre:
+            return JsonResponse({
+                'success': False,
+                'message': 'Nombre del servicio es requerido'
+            }, status=400)
+
+        # Obtener afiliado y servicio
+        try:
+            afiliado = Afiliado.objects.get(id=afiliado_id)
+            servicio = Servicio.objects.get(nombre=servicio_nombre)
+        except (Afiliado.DoesNotExist, Servicio.DoesNotExist):
+            return JsonResponse({
+                'success': False,
+                'message': 'Afiliado o servicio no encontrado'
+            }, status=404)
+
+        # Verificar si ya existe una atención para hoy (opcional)
+        hoy = timezone.now().date()
+        if Atencion.objects.filter(
+            afiliado=afiliado,
+            servicio=servicio,
+            fecha_atencion__date=hoy
+        ).exists():
+            return JsonResponse({
+                'success': False,
+                'message': 'Ya existe una atención registrada para este servicio hoy'
+            }, status=400)
+
+        # Crear la atención y registrar quién la hizo
+        atencion = Atencion.objects.create(
+            afiliado=afiliado,
+            servicio=servicio,
+            observaciones=observaciones,
+            registrado_por=request.user  # 🔥 guarda al usuario autenticado
+        )
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Servicio {servicio.nombre} marcado como cumplido por {request.user.username}',
+            'atencion_id': atencion.id
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'message': 'Error en el formato de datos JSON'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error del servidor: {str(e)}'
+        }, status=500)
+
+
+
+
+from django.db.models import Count
+from datetime import datetime, timedelta
+from django.utils import timezone
+from django.db.models import Count, Q
+from datetime import datetime, timedelta
+from django.utils import timezone
+from django.db import models
+@login_required
+def reportes_view(request):
+    """
+    Vista para reportes de cumplimiento mensual
+    """
+    # Obtener mes y año actual
+    hoy = timezone.now().date()
+    mes_actual = hoy.month
+    año_actual = hoy.year
+
+    # Calcular fechas del mes actual
+    fecha_inicio_mes = hoy.replace(day=1)
+    fecha_fin_mes = (fecha_inicio_mes + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+
+    # Convertir a datetime para consultas
+    fecha_inicio_dt = timezone.make_aware(datetime.combine(fecha_inicio_mes, datetime.min.time()))
+    fecha_fin_dt = timezone.make_aware(datetime.combine(fecha_fin_mes, datetime.max.time()))
+
+    # 1. Total de pacientes atendidos este mes
+    pacientes_atendidos_mes = Afiliado.objects.filter(
+        atenciones__fecha_atencion__range=(fecha_inicio_dt, fecha_fin_dt)
+    ).distinct().count()
+
+    # 2. Obtener todos los servicios disponibles
+    todos_servicios = Servicio.objects.all()
+
+    # 3. Afiliados que ya tienen TODAS las atenciones del mes
+    afiliados_completos = []
+    afiliados_atendidos_mes = Afiliado.objects.filter(
+        atenciones__fecha_atencion__range=(fecha_inicio_dt, fecha_fin_dt)
+    ).distinct()
+
+    for afiliado in afiliados_atendidos_mes:
+        servicios_atendidos = afiliado.servicios_del_anio(año_actual)
+        if servicios_atendidos.count() == todos_servicios.count():
+            afiliados_completos.append(afiliado)
+
+    total_completos = len(afiliados_completos)
+
+    # 4. Datos para la tabla: afiliados atendidos este mes con estado de cada servicio
+    afiliados_con_estado = []
+    for afiliado in afiliados_atendidos_mes:
+        servicios_atendidos = set(afiliado.servicios_del_anio(año_actual))
+        servicios_pendientes = set(todos_servicios) - servicios_atendidos
+
+        # Crear lista de servicios con estado para el template
+        servicios_estado = []
+        for servicio in todos_servicios:
+            servicios_estado.append({
+                'nombre': servicio.nombre,
+                'cumplido': servicio in servicios_atendidos
+            })
+
+        afiliados_con_estado.append({
+            'afiliado': afiliado,
+            'servicios_estado': servicios_estado,
+            'total_atendidos': len(servicios_atendidos),
+            'total_pendientes': len(servicios_pendientes),
+            'completo': len(servicios_pendientes) == 0
+        })
+
+    context = {
+        'pacientes_atendidos_mes': pacientes_atendidos_mes,
+        'total_completos': total_completos,
+        'afiliados_con_estado': afiliados_con_estado,
+        'todos_servicios': todos_servicios,
+        'mes_actual': fecha_inicio_mes.strftime("%B %Y"),
+        'fecha_inicio_mes': fecha_inicio_mes,
+        'fecha_fin_mes': fecha_fin_mes,
+    }
+
+    return render(request, 'reportes.html', context)
 @user_passes_test(lambda u: u.is_superuser)
 def admin_panel(request):
     return render(request, "admin.html")
@@ -189,27 +439,27 @@ from datetime import datetime
 @login_required
 def dashboard_view(request):
     current_year = datetime.now().year
-    
+
     # Estadísticas principales
     total_afiliados = Afiliado.objects.count()
     total_atenciones = Atencion.objects.count()
     atenciones_este_anio = Atencion.objects.filter(fecha_atencion__year=current_year).count()
-    
+
     # Servicios más utilizados este año
     servicios_populares = Servicio.objects.filter(
         atenciones__fecha_atencion__year=current_year
     ).annotate(
         total_atenciones=Count('atenciones')
     ).order_by('-total_atenciones')[:5]
-    
+
     # Últimas atenciones registradas
     ultimas_atenciones = Atencion.objects.select_related('afiliado', 'servicio').order_by('-fecha_atencion')[:5]
-    
+
     # Estadísticas de cumplimiento anual
     afiliados_con_servicios = Afiliado.objects.filter(
         atenciones__fecha_atencion__year=current_year
     ).distinct().count()
-    
+
     context = {
         'total_afiliados': total_afiliados,
         'total_atenciones': total_atenciones,
@@ -219,8 +469,9 @@ def dashboard_view(request):
         'afiliados_con_servicios': afiliados_con_servicios,
         'current_year': current_year,
     }
-    
+
     return render(request, "dashboard.html", context)
+
 
 def afiliados_data(request):
     draw = int(request.GET.get('draw', 1))
@@ -237,7 +488,10 @@ def afiliados_data(request):
             Q(dni__icontains=search_value) |
             Q(nombres__icontains=search_value) |
             Q(apellido_paterno__icontains=search_value) |
-            Q(apellido_materno__icontains=search_value)
+            Q(apellido_materno__icontains=search_value) |
+            Q(observacion_enfermeria__icontains=search_value) |
+            Q(observacion_odontologia__icontains=search_value) |
+            Q(observacion_obstetricia__icontains=search_value)
         )
 
     total_records = queryset.count()
@@ -270,6 +524,9 @@ def afiliados_data(request):
             'sexo_val': a.sexo or "",  # para que JS sepa si es "M" o "F"
             'servicios_cumplidos': servicios_cumplidos,
             'servicios_pendientes': servicios_pendientes,
+            'observacion_enfermeria': a.observacion_enfermeria or "",
+            'observacion_odontologia': a.observacion_odontologia or "",
+            'observacion_obstetricia': a.observacion_obstetricia or "",
         })
 
     return JsonResponse({
@@ -410,10 +667,10 @@ def admin_users_search(request):
     View para buscar usuarios (solo para administradores)
     """
     query = request.GET.get('q', '').strip()
-    
+
     if len(query) < 2:
         return JsonResponse([], safe=False)
-    
+
     # Buscar SOLO usuarios que NO sean superusuarios
     users = User.objects.filter(
         Q(username__icontains=query) |
@@ -422,7 +679,7 @@ def admin_users_search(request):
         Q(last_name__icontains=query),
         is_superuser=False  # 🔥 clave
     ).order_by('username')[:20]  # Límite de resultados
-    
+
     users_data = []
     for user in users:
         users_data.append({
@@ -436,7 +693,7 @@ def admin_users_search(request):
             'is_staff': user.is_staff,
             'is_superuser': user.is_superuser
         })
-    
+
     return JsonResponse(users_data, safe=False)
 
 
@@ -452,20 +709,20 @@ def admin_change_password(request):
         data = json.loads(request.body)
         user_id = data.get('user_id')
         new_password = data.get('new_password')
-        
+
         # Validaciones básicas
         if not user_id or not new_password:
             return JsonResponse({
                 'success': False,
                 'message': 'Datos incompletos'
             }, status=400)
-        
+
         if len(new_password) < 6:
             return JsonResponse({
                 'success': False,
                 'message': 'La contraseña debe tener al menos 6 caracteres'
             }, status=400)
-        
+
         # Buscar el usuario
         try:
             user = User.objects.get(id=user_id)
@@ -474,19 +731,19 @@ def admin_change_password(request):
                 'success': False,
                 'message': 'Usuario no encontrado'
             }, status=404)
-        
+
         # Cambiar la contraseña usando el método de Django
         user.set_password(new_password)
         user.save()
-        
+
         # Opcional: Registrar la acción en logs
         print(f"Contraseña cambiada para usuario: {user.username} por admin: {request.user.username}")
-        
+
         return JsonResponse({
             'success': True,
             'message': f'Contraseña actualizada correctamente para {user.username}'
         })
-        
+
     except json.JSONDecodeError:
         return JsonResponse({
             'success': False,
@@ -497,7 +754,7 @@ def admin_change_password(request):
             'success': False,
             'message': f'Error del servidor: {str(e)}'
         }, status=500)
-    
+
 
 from django.contrib.auth import update_session_auth_hash
 
@@ -515,23 +772,23 @@ def change_own_password(request):
                 'success': False,
                 'message': 'Datos no proporcionados'
             }, status=400)
-        
+
         data = json.loads(request.body)
         new_password = data.get('new_password')
-        
+
         if not new_password:
             return JsonResponse({
                 'success': False,
                 'message': 'La nueva contraseña es requerida'
             }, status=400)
-        
+
         # Validar nueva contraseña
         if len(new_password) < 6:
             return JsonResponse({
                 'success': False,
                 'message': 'La nueva contraseña debe tener al menos 6 caracteres'
             }, status=400)
-        
+
         # Cambiar contraseña
         request.user.set_password(new_password)
         request.user.save()
@@ -543,7 +800,7 @@ def change_own_password(request):
             'success': True,
             'message': 'Contraseña cambiada correctamente'
         })
-        
+
     except json.JSONDecodeError:
         return JsonResponse({
             'success': False,
@@ -571,16 +828,16 @@ def change_own_email(request):
                 'success': False,
                 'message': 'Datos no proporcionados'
             }, status=400)
-        
+
         data = json.loads(request.body)
         new_email = data.get('new_email')
-        
+
         if not new_email:
             return JsonResponse({
                 'success': False,
                 'message': 'El nuevo email es requerido'
             }, status=400)
-        
+
         # Validar formato de email
         from django.core.validators import validate_email
         from django.core.exceptions import ValidationError
@@ -591,23 +848,23 @@ def change_own_email(request):
                 'success': False,
                 'message': 'El formato del email no es válido'
             }, status=400)
-        
+
         # Verificar si el email ya existe
         if User.objects.filter(email=new_email).exclude(id=request.user.id).exists():
             return JsonResponse({
                 'success': False,
                 'message': 'Este email ya está en uso por otro usuario'
             }, status=400)
-        
+
         # Cambiar email
         request.user.email = new_email
         request.user.save()
-        
+
         return JsonResponse({
             'success': True,
             'message': 'Email cambiado correctamente'
         })
-        
+
     except json.JSONDecodeError:
         return JsonResponse({
             'success': False,
@@ -618,7 +875,7 @@ def change_own_email(request):
             'success': False,
             'message': f'Error del servidor: {str(e)}'
         }, status=500)
-    
+
 
 
 # Solo superusuarios
@@ -629,17 +886,17 @@ def is_superuser(u):
 def create_users_from_excel(request):
     """
     Subir .xlsx con columnas en Hoja2:
-    username | password (DNI)
+    username | name | password (DNI)
     """
     stats = {"created": 0, "skipped": 0, "errors": 0, "total_rows": 0}
-    logs = []  # aquí guardamos detalle por fila
+    logs = []
 
     if request.method == "POST" and request.FILES.get("excel_file"):
         excel_file = request.FILES["excel_file"]
 
         try:
             wb = openpyxl.load_workbook(excel_file, read_only=True, data_only=True)
-            
+
             if "Hoja2" not in wb.sheetnames:
                 messages.error(request, "El archivo no contiene la Hoja2 requerida.")
                 return redirect("create_users_excel")
@@ -658,8 +915,10 @@ def create_users_from_excel(request):
             for idx, row in enumerate(rows, start=2):  # desde fila 2 por encabezado
                 stats["total_rows"] += 1
                 try:
+                    # 🟩 Ahora esperamos 3 columnas: username, name, password
                     username_raw = row[0] if row and len(row) > 0 else None
-                    password_raw = row[1] if row and len(row) > 1 else None
+                    name_raw = row[1] if row and len(row) > 1 else None
+                    password_raw = row[2] if row and len(row) > 2 else None
 
                     if not username_raw or not password_raw:
                         stats["skipped"] += 1
@@ -667,6 +926,7 @@ def create_users_from_excel(request):
                         continue
 
                     username = sanitize_username(str(username_raw))
+                    first_name = str(name_raw or "").strip()
 
                     if username in existing_usernames:
                         stats["skipped"] += 1
@@ -687,13 +947,14 @@ def create_users_from_excel(request):
 
                     user = User(
                         username=username,
+                        first_name=first_name,
                         email=email,
                         password=make_password(password),
                         is_active=True,
                     )
                     batch.append(user)
                     existing_usernames.add(username)
-                    logs.append(f"Fila {idx}: Creado usuario {username} (email {email})")
+                    logs.append(f"Fila {idx}: Creado usuario {username} ({first_name}) con email {email}")
 
                     if len(batch) >= batch_size:
                         User.objects.bulk_create(batch, batch_size=batch_size)

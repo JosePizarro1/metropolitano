@@ -138,35 +138,79 @@
 }
 
 /* Verde pastel para servicios cumplidos */
-.servicio-badge { 
+.servicio-badge {
     background: linear-gradient(135deg, #a7f3b7, #6ee7b7);
     box-shadow: 0 1px 3px rgba(16, 185, 129, 0.2);
     border: 1px solid #a7f3d0;
 }
 
 /* Azul pastel para servicios pendientes */
-.badge-pendiente { 
+.badge-pendiente {
     background: linear-gradient(135deg, #c7d2fe, #a5b4fc);
     box-shadow: 0 1px 3px rgba(99, 102, 241, 0.2);
     border: 1px solid #c7d2fe;
 }
 
-.status-completado { 
+.status-completado {
     background: linear-gradient(135deg, #37d651, #6ee76e);
     border: 1px solid #a7f3d0;
     color: #1f2937;
 }
 
-.status-pendiente { 
+.status-pendiente {
     background: linear-gradient(135deg, #c7d2fe, #a5b4fc);
     border: 1px solid #c7d2fe;
     color: #1f2937;
 }
 
-.status-vacio { 
+.status-vacio {
     background: linear-gradient(135deg, #e5e7eb, #d1d5db);
     border: 1px solid #e5e7eb;
     color: #6b7280;
+}
+/* Badges clickeables */
+.clickable-badge {
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+}
+
+.clickable-badge:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+    filter: brightness(1.1) !important;
+}
+/* Nuevos estilos para la columna de observaciones */
+.observaciones-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 5px;
+}
+
+.observacion-input {
+    width: 100%;
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 12px;
+    transition: border-color 0.3s ease;
+}
+
+.observacion-input:focus {
+    border-color: #1976d2;
+    outline: none;
+}
+
+.observacion-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 2px;
+}
+
+/* Ajustar el ancho de la columna si es necesario */
+#afiliadosTable td:nth-child(8) {
+    min-width: 250px; /* Ajusta según necesites */
 }
 </style>
 
@@ -181,6 +225,7 @@
             <th>Fecha Nacimiento</th>
             <th>Servicios Cumplidos</th>
             <th>Servicios Pendientes</th>
+            <th>Observaciones</th> <!-- Nueva columna -->
             <th>Acciones</th>
         </tr>
     </thead>
@@ -246,20 +291,20 @@ $(document).ready(function() {
                 }
             },
             { data: 'fecha_nacimiento' },
-{ 
-    data: 'servicios_cumplidos', 
-    orderable: false, 
+{
+    data: 'servicios_cumplidos',
+    orderable: false,
     searchable: false,
     render: function(data, type, row) {
         // Caso cuando no hay datos o es "-" o vacío
         if (!data || data === '-' || data === '' || data === '0' || data === 0) {
             return '<span class="status-badge status-vacio" title="Sin servicios cumplidos">-</span>';
         }
-        
+
         // Si es un string que podría contener servicios (con o sin comas)
         if (typeof data === 'string') {
             let servicios = [];
-            
+
             // Si contiene comas, separarlos
             if (data.includes(',')) {
                 servicios = data.split(',').map(s => s.trim()).filter(s => s !== '-' && s !== '');
@@ -267,43 +312,50 @@ $(document).ready(function() {
                 // Si es un solo servicio, crear array con ese elemento
                 servicios = [data.trim()];
             }
-            
+
             // Si después de filtrar no hay servicios
             if (servicios.length === 0) {
                 return '<span class="status-badge status-vacio" title="Sin servicios cumplidos">-</span>';
             }
-            
+
             // Si solo hay un servicio, mostrar el badge individual
             if (servicios.length === 1) {
                 const servicio = servicios[0];
-                return `<span class="servicio-badge" title="${servicio}">${servicio}</span>`;
+                return `<span class="servicio-badge clickable-badge-cumplido"
+                         title="Click para eliminar: ${servicio}"
+                         data-afiliado-id="${row.id}"
+                         data-servicio="${servicio}">${servicio}</span>`;
             }
-            
+
             // Si hay múltiples servicios
             const badges = servicios.map(servicio => {
-                return `<span class="servicio-badge" title="${servicio}">${servicio}</span>`;
+                return `<span class="servicio-badge clickable-badge-cumplido"
+                         title="Click para eliminar: ${servicio}"
+                         data-afiliado-id="${row.id}"
+                         data-servicio="${servicio}">${servicio}</span>`;
             });
             return `<div class="servicios-container">${badges.join('')}</div>`;
         }
-        
+
         // Si es solo un número (backup por si acaso)
         return `<span class="status-badge status-completado">${data}</span>`;
     }
 },
-{ 
-    data: 'servicios_pendientes', 
-    orderable: false, 
+// En la columna de servicios_pendientes, modifica el render:
+{
+    data: 'servicios_pendientes',
+    orderable: false,
     searchable: false,
     render: function(data, type, row) {
         // Caso cuando no hay datos o es "-" o vacío
         if (!data || data === '-' || data === '' || data === '0' || data === 0) {
             return '<span class="status-badge status-completado" title="Sin servicios pendientes">0</span>';
         }
-        
+
         // Si es un string que podría contener servicios (con o sin comas)
         if (typeof data === 'string') {
             let servicios = [];
-            
+
             // Si contiene comas, separarlos
             if (data.includes(',')) {
                 servicios = data.split(',').map(s => s.trim()).filter(s => s !== '-' && s !== '');
@@ -311,30 +363,67 @@ $(document).ready(function() {
                 // Si es un solo servicio, crear array con ese elemento
                 servicios = [data.trim()];
             }
-            
+
             // Si después de filtrar no hay servicios
             if (servicios.length === 0) {
                 return '<span class="status-badge status-completado" title="Sin servicios pendientes">0</span>';
             }
-            
+
             // Si solo hay un servicio, mostrar el badge individual
             if (servicios.length === 1) {
                 const servicio = servicios[0];
-                return `<span class="servicio-badge badge-pendiente" title="${servicio} pendiente">${servicio}</span>`;
+                return `<span class="servicio-badge badge-pendiente clickable-badge-pendiente"
+                         title="Click para marcar como cumplido: ${servicio}"
+                         data-afiliado-id="${row.id}"
+                         data-servicio="${servicio}">${servicio}</span>`;
             }
-            
+
             // Si hay múltiples servicios
             const badges = servicios.map(servicio => {
-                return `<span class="servicio-badge badge-pendiente" title="${servicio} pendiente">${servicio}</span>`;
+                return `<span class="servicio-badge badge-pendiente clickable-badge-pendiente"
+                         title="Click para marcar como cumplido: ${servicio}"
+                         data-afiliado-id="${row.id}"
+                         data-servicio="${servicio}">${servicio}</span>`;
             });
             return `<div class="servicios-container">${badges.join('')}</div>`;
         }
-        
+
         // Si es solo un número (backup por si acaso)
         return `<span class="status-badge status-pendiente">${data}</span>`;
     }
 },
-
+{
+                data: null,
+                orderable: false,
+                searchable: false,
+                render: function(data, type, row) {
+                    return `
+                        <div class="observaciones-container">
+                            <div>
+                                <label class="observacion-label">Enfermería</label>
+                                <input type="text" class="observacion-input"
+                                       data-afiliado-id="${row.id}"
+                                       data-campo="observacion_enfermeria"
+                                       value="${row.observacion_enfermeria || ''}">
+                            </div>
+                            <div>
+                                <label class="observacion-label">Odontología</label>
+                                <input type="text" class="observacion-input"
+                                       data-afiliado-id="${row.id}"
+                                       data-campo="observacion_odontologia"
+                                       value="${row.observacion_odontologia || ''}">
+                            </div>
+                            <div>
+                                <label class="observacion-label">Obstetricia</label>
+                                <input type="text" class="observacion-input"
+                                       data-afiliado-id="${row.id}"
+                                       data-campo="observacion_obstetricia"
+                                       value="${row.observacion_obstetricia || ''}">
+                            </div>
+                        </div>
+                    `;
+                }
+            },
             {
                 data: null, orderable: false, searchable: false,
                 render: function(data, type, row) {
@@ -347,6 +436,69 @@ $(document).ready(function() {
         ],
         pageLength: 50
     });
+// Manejar cambios en los inputs de observaciones
+    $(document).on('change', '.observacion-input', function() {
+        const afiliadoId = $(this).data('afiliado-id');
+        const campo = $(this).data('campo');
+        const valor = $(this).val();
+        const afiliadoNombre = $(this).closest('tr').find('td:eq(3)').text();
+
+        guardarObservacion(afiliadoId, campo, valor, afiliadoNombre);
+    });
+
+    // Función para guardar observaciones con AJAX
+    async function guardarObservacion(afiliadoId, campo, valor, afiliadoNombre) {
+        Swal.fire({
+            title: 'Guardando...',
+            text: 'Por favor espere',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); },
+            background: '#f8fafc',
+            color: '#1f2937',
+            timer: 1000, // Mostrar loader por 1 segundo
+            timerProgressBar: true
+        });
+
+        try {
+            const response = await fetch(`/afiliados/${afiliadoId}/guardar-observacion/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    campo: campo,
+                    valor: valor
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Guardado!',
+                    text: `Observación de ${campo.replace('observacion_', '')} para ${afiliadoNombre} actualizada`,
+                    timer: 1500,
+                    showConfirmButton: false,
+                    background: '#f8fafc',
+                    color: '#1f2937'
+                });
+                // No recargamos la tabla para no perder el foco, los datos ya están actualizados
+            } else {
+                throw new Error(data.message || 'Error al guardar la observación');
+            }
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message,
+                confirmButtonColor: '#ef4444',
+                background: '#f8fafc',
+                color: '#1f2937'
+            });
+        }
+    }
 
     // Abrir modal con los datos del afiliado (desde row)
        // Abrir modal con datos
@@ -414,6 +566,192 @@ $(document).ready(function() {
             }
         });
     });
+
+// Manejar click en badges de servicios pendientes (marcar como cumplido)
+$(document).on('click', '.clickable-badge-pendiente', function() {
+    const afiliadoId = $(this).data('afiliado-id');
+    const servicio = $(this).data('servicio');
+    const afiliadoNombre = $(this).closest('tr').find('td:eq(3)').text();
+
+    marcarServicioCumplido(afiliadoId, servicio, afiliadoNombre);
+});
+
+// Manejar click en badges de servicios cumplidos (eliminar)
+$(document).on('click', '.clickable-badge-cumplido', function() {
+    const afiliadoId = $(this).data('afiliado-id');
+    const servicio = $(this).data('servicio');
+    const afiliadoNombre = $(this).closest('tr').find('td:eq(3)').text();
+
+    eliminarServicioCumplido(afiliadoId, servicio, afiliadoNombre);
+});
+
+// Función para mostrar SweetAlert y marcar servicio como cumplido
+async function marcarServicioCumplido(afiliadoId, servicio, afiliadoNombre) {
+    // SweetAlert con input de observaciones
+    const { value: formValues, isConfirmed } = await Swal.fire({
+        title: `Marcar servicio como cumplido`,
+        html: `
+            <div class="text-left">
+                <p><strong>Afiliado:</strong> ${afiliadoNombre}</p>
+                <p><strong>Servicio:</strong> ${servicio}</p>
+                <label for="observaciones" class="block mt-4 mb-2 font-semibold">Observaciones (opcional):</label>
+                <textarea id="observaciones" class="swal2-textarea" placeholder="Ingrese observaciones sobre la atención..." rows="4"></textarea>
+            </div>
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'Marcar como Cumplido',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#6b7280',
+        background: '#f8fafc',
+        color: '#1f2937',
+        preConfirm: () => {
+            return {
+                observaciones: document.getElementById('observaciones').value
+            }
+        }
+    });
+
+    if (!isConfirmed) return;
+
+    // Mostrar loader
+    Swal.fire({
+        title: 'Procesando...',
+        text: 'Marcando servicio como cumplido',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+        background: '#f8fafc',
+        color: '#1f2937'
+    });
+
+    try {
+        const response = await fetch(`/afiliados/${afiliadoId}/marcar-servicio/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({
+                servicio: servicio,
+                observaciones: formValues.observaciones
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Servicio cumplido!',
+                text: data.message,
+                confirmButtonColor: '#10b981',
+                background: '#f8fafc',
+                color: '#1f2937'
+            });
+
+            // Recargar la tabla para actualizar los badges
+            $('#afiliadosTable').DataTable().ajax.reload(null, false);
+        } else {
+            throw new Error(data.message || 'Error al marcar el servicio');
+        }
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.message,
+            confirmButtonColor: '#ef4444',
+            background: '#f8fafc',
+            color: '#1f2937'
+        });
+    }
+}
+
+// Función para mostrar SweetAlert y eliminar servicio cumplido
+async function eliminarServicioCumplido(afiliadoId, servicio, afiliadoNombre) {
+    // SweetAlert de confirmación para eliminar
+    const { isConfirmed } = await Swal.fire({
+        title: `Eliminar servicio cumplido`,
+        html: `
+            <div class="text-left">
+                <p><strong>Afiliado:</strong> ${afiliadoNombre}</p>
+                <p><strong>Servicio:</strong> ${servicio}</p>
+                <p class="text-yellow-600 font-semibold mt-3">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    ¿Estás seguro de que quieres eliminar este servicio cumplido?
+                </p>
+                <p class="text-sm text-gray-600 mt-2">
+                    Esta acción eliminará el registro de atención y marcará el servicio como pendiente.
+                </p>
+            </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        background: '#f8fafc',
+        color: '#1f2937'
+    });
+
+    if (!isConfirmed) return;
+
+    // Mostrar loader
+    Swal.fire({
+        title: 'Procesando...',
+        text: 'Eliminando servicio cumplido',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+        background: '#f8fafc',
+        color: '#1f2937'
+    });
+
+    try {
+        const response = await fetch(`/afiliados/${afiliadoId}/eliminar-servicio/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({
+                servicio: servicio
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Servicio eliminado!',
+                text: data.message,
+                confirmButtonColor: '#10b981',
+                background: '#f8fafc',
+                color: '#1f2937'
+            });
+
+            // Recargar la tabla para actualizar los badges
+            $('#afiliadosTable').DataTable().ajax.reload(null, false);
+        } else {
+            throw new Error(data.message || 'Error al eliminar el servicio');
+        }
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.message,
+            confirmButtonColor: '#ef4444',
+            background: '#f8fafc',
+            color: '#1f2937'
+        });
+    }
+}
+
 });
 </script>
 

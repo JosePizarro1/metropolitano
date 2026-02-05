@@ -2,18 +2,18 @@
 
 from django.contrib import admin
 from django.urls import path
-from afiliados.views import * 
+from afiliados.views import *
 from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', login_view, name='login'),  # default
-    path('dashboard/', dashboard_view, name='dashboard'),  
-    path('logout/', auth_views.LogoutView.as_view(), name='logout'), 
+    path('dashboard/', dashboard_view, name='dashboard'),
+    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('afiliados/', afiliados, name='afiliados'),
     path('perfil/', settings, name='settings'),
     path('afiliados/data/', afiliados_data, name='afiliados_data'),
-   # path("cargar_excel/", cargar_afiliados_excel, name="cargar_excel"),
+    #path("cargar_excel/", cargar_afiliados_excel, name="cargar_excel"),
     path("afiliado/<int:afiliado_id>/editar/", editar_afiliado, name="editar_afiliado"),
     path("atenciones/", atenciones_view, name="atenciones"),
     path("atenciones/list/<int:afiliado_id>/", atenciones_list, name="atenciones_list"),
@@ -26,5 +26,8 @@ urlpatterns = [
     path('settings/change-password/', change_own_password, name='change_own_password'),
     path('settings/change-email/', change_own_email, name='change_own_email'),
     path("create-users-excel/", create_users_from_excel, name="create_users_excel"),
-
+    path('afiliados/<int:afiliado_id>/marcar-servicio/', marcar_servicio_cumplido, name='marcar_servicio_cumplido'),
+    path('reportes/', reportes_view, name='reportes'),
+    path('afiliados/<int:afiliado_id>/eliminar-servicio/', eliminar_servicio_cumplido, name='eliminar_servicio_cumplido'),
+    path('afiliados/<int:afiliado_id>/guardar-observacion/', guardar_observacion, name='guardar_observacion'),
 ]
