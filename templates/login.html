@@ -1,271 +1,388 @@
-
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centro de Salud Esperanza - Login</title>
+    <title>Metropolitano - Iniciar Sesión</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
     <style>
-        /* Estilos generales */
+        :root {
+            --primary: #0f4c75;
+            --primary-light: #3282b8;
+            --accent: #bbe1fa;
+            --dark: #1b262c;
+            --bg-gradient: linear-gradient(135deg, #1b262c 0%, #0f4c75 100%);
+            --glass: rgba(255, 255, 255, 0.95);
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', sans-serif;
         }
 
         body {
-            background-color: #f0f7ff;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            padding: 20px;
+            overflow: hidden;
+            position: relative;
         }
 
-        /* Contenedor principal */
-        .login-container {
-            display: flex;
+        /* Abstract shapes */
+        .shape {
+            position: absolute;
+            filter: blur(80px);
+            z-index: -1;
+            border-radius: 50%;
+        }
+
+        .shape-1 {
+            width: 400px;
+            height: 400px;
+            background: rgba(50, 130, 184, 0.3);
+            top: -100px;
+            right: -100px;
+        }
+
+        .shape-2 {
+            width: 300px;
+            height: 300px;
+            background: rgba(187, 225, 250, 0.2);
+            bottom: -50px;
+            left: -50px;
+        }
+
+        .login-wrap {
             width: 100%;
             max-width: 1000px;
-            height: 600px;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            z-index: 10;
         }
 
-        /* Panel izquierdo - Imagen */
+        .login-container {
+            display: flex;
+            background: var(--glass);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            min-height: 600px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .login-image {
-            flex: 1;
-            background: linear-gradient(rgba(25, 118, 210, 0.7), rgba(25, 118, 210, 0.7)),
-                        url('https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80') center/cover;
+            flex: 1.2;
+            background: url('{% static "images/login-bg.png" %}') center/cover no-repeat;
+            position: relative;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 40px;
+            justify-content: flex-end;
+            padding: 50px;
             color: white;
-            text-align: center;
+            transition: transform 0.5s ease;
+        }
+
+        .login-image::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(0deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 60%);
+        }
+
+        .image-content {
+            position: relative;
+            z-index: 2;
         }
 
         .login-image h1 {
-            font-size: 2.5rem;
-            margin-bottom: 15px;
-            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+            font-size: 3rem;
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 20px;
         }
 
         .login-image p {
             font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 350px;
             line-height: 1.6;
-            max-width: 400px;
         }
 
-        /* Panel derecho - Formulario */
-        .login-form {
+        .login-form-area {
             flex: 1;
-            background-color: white;
-            padding: 50px;
+            padding: 60px 50px;
             display: flex;
             flex-direction: column;
             justify-content: center;
         }
 
-        .logo {
-            text-align: center;
-            margin-bottom: 30px;
+        .brand {
+            margin-bottom: 40px;
         }
 
-        .logo h2 {
-            color: #1976d2;
-            font-size: 2rem;
-            margin-bottom: 5px;
+        .brand .tagline {
+            color: var(--primary-light);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+            display: block;
         }
 
-        .logo p {
-            color: #666;
-            font-size: 1rem;
+        .brand h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.2rem;
+            color: var(--dark);
+            font-weight: 700;
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
+            position: relative;
         }
 
         .form-group label {
             display: block;
+            font-size: 0.85rem;
+            color: #64748b;
+            font-weight: 600;
             margin-bottom: 8px;
-            color: #444;
-            font-weight: 500;
+            transition: color 0.3s;
         }
 
-        .form-group input {
+        input {
             width: 100%;
-            padding: 12px 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            padding: 14px 16px;
+            background: #f1f5f9;
+            border: 2px solid transparent;
+            border-radius: 12px;
             font-size: 1rem;
-            transition: border 0.3s;
+            color: var(--dark);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .form-group input:focus {
+        input:focus {
             outline: none;
-            border-color: #1976d2;
-            box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+            background: white;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 4px rgba(50, 130, 184, 0.1);
         }
 
-        .remember-forgot {
+        input::placeholder {
+            color: #94a3b8;
+        }
+
+        .options {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
+            margin-bottom: 30px;
             font-size: 0.9rem;
         }
 
         .remember {
             display: flex;
             align-items: center;
+            color: #64748b;
+            cursor: pointer;
         }
 
-        .remember input {
-            margin-right: 5px;
+        .remember input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            cursor: pointer;
         }
 
         .forgot a {
-            color: #1976d2;
+            color: var(--primary-light);
             text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
         }
 
         .forgot a:hover {
-            text-decoration: underline;
+            color: var(--primary);
         }
 
-        .login-btn {
-            background-color: #1976d2;
+        .login-button {
+            background: var(--primary);
             color: white;
             border: none;
-            padding: 14px;
-            border-radius: 8px;
+            padding: 16px;
+            border-radius: 12px;
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.3s;
-            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 15px -3px rgba(15, 76, 117, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
         }
 
-        .login-btn:hover {
-            background-color: #1565c0;
+        .login-button:hover {
+            background: var(--primary-light);
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(15, 76, 117, 0.4);
         }
 
-        .demo-accounts {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #f5f9ff;
-            border-radius: 8px;
-            font-size: 0.9rem;
+        .login-button:active {
+            transform: translateY(0);
         }
 
-        .demo-accounts h3 {
-            color: #1976d2;
-            margin-bottom: 10px;
-            font-size: 1rem;
+        .admin-link {
+            margin-top: 30px;
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
         }
 
-        .demo-accounts p {
-            margin-bottom: 5px;
-            color: #555;
+        .admin-link a {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .admin-link a:hover {
+            color: var(--primary-light);
         }
 
         /* Responsive */
-        @media (max-width: 768px) {
+        @media (max-width: 900px) {
             .login-container {
                 flex-direction: column;
-                height: auto;
+                min-height: auto;
             }
 
             .login-image {
-                padding: 30px 20px;
-                min-height: 200px;
+                padding: 40px;
+                min-height: 250px;
             }
 
             .login-image h1 {
-                font-size: 2rem;
+                font-size: 2.2rem;
             }
 
-            .login-form {
-                padding: 30px 20px;
+            .login-form-area {
+                padding: 40px 30px;
             }
         }
 
         @media (max-width: 480px) {
-            .remember-forgot {
+            .options {
                 flex-direction: column;
+                gap: 15px;
                 align-items: flex-start;
-            }
-
-            .forgot {
-                margin-top: 10px;
             }
         }
     </style>
 </head>
-<body>
-    <div class="login-container">
-        <div class="login-image">
-            <h1>Centro de Salud Esperanza</h1>
-        </div>
 
-        <div class="login-form">
-            <div class="logo">
-                <h2>Seguimiento de Atención Integral</h2>
-                <p>Control de Pacientes</p>
+<body>
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+
+    <div class="login-wrap">
+        <div class="login-container">
+            <div class="login-image">
+                <div class="image-content">
+                    <h1>Metropolitano</h1>
+                    <p>Seguimiento de Atención Integral y Control de Pacientes.</p>
+                </div>
             </div>
 
-            <form method="post">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label for="username">Usuario</label>
-                    <input type="text" name="username" id="username" placeholder="Ingresa tu usuario" required>
+            <div class="login-form-area">
+                <div class="brand">
+                    <span class="tagline">Bienvenido</span>
+                    <h2>Iniciar Sesión</h2>
                 </div>
 
-                <div class="form-group">
-                    <label for="password">Contraseña</label>
-                    <input type="password" name="password" id="password" placeholder="Ingresa tu contraseña" required>
-                </div>
-
-                <div class="remember-forgot">
-                    <div class="remember">
-                        <input type="checkbox" id="remember">
-                        <label for="remember">Recordarme</label>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="username">Usuario</label>
+                        <input type="text" name="username" id="username" placeholder="Tu nombre de usuario" required>
                     </div>
-                    <div class="forgot">
-                        <a href="#">¿Olvidaste tu contraseña?</a>
+
+                    <div class="form-group">
+                        <label for="password">Contraseña</label>
+                        <input type="password" name="password" id="password" placeholder="••••••••" required>
                     </div>
+
+                    <div class="options">
+                        <label class="remember">
+                            <input type="checkbox" id="remember">
+                            Recordarme
+                        </label>
+                        <div class="forgot">
+                            <a href="#">¿Olvidaste tu contraseña?</a>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="login-button">
+                        Ingresar al Sistema
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 12H19" stroke="white" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <path d="M12 5L19 12L12 19" stroke="white" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                </form>
+
+                <div class="admin-link">
+                    <a href="{% url 'admin:index' %}">Acceso Administrativo</a>
                 </div>
-
-                <button type="submit" class="login-btn">Ingresar al Sistema</button>
-            </form>
-
-            <!-- Enlace extra al panel de administración -->
-            <div class="admin-access" style="margin-top: 15px; text-align: center;">
-                <a href="{% url 'admin:index' %}" style="color: #1976d2; font-weight: 600; text-decoration: none;">
-                    Ir al Panel de Administración
-                </a>
             </div>
         </div>
     </div>
-</body>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-{% if messages %}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    {% if messages %}
     <script>
         {% for message in messages %}
-            Swal.fire({
-                icon: "{% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% else %}info{% endif %}",
-                title: "{{ message|escapejs }}",
-                confirmButtonText: "Aceptar"
-            });
+        Swal.fire({
+            icon: "{% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% else %}info{% endif %}",
+            title: "{{ message|escapejs }}",
+            confirmButtonColor: '#0f4c75',
+            confirmButtonText: "Aceptar",
+            customClass: {
+                popup: 'rounded-card'
+            }
+        });
         {% endfor %}
     </script>
-{% endif %}
+    {% endif %}
+</body>
 
 </html>

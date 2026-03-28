@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control - Centro de Salud</title>
+    <title>Panel de Control - Metropolitano</title>
     <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/hospital-3.png">
 
     <style>
@@ -151,7 +151,16 @@
             font-size: 1.5rem;
             color: var(--primary);
             cursor: pointer;
-            display: none;
+            display: flex; /* Siempre visible */
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .toggle-sidebar:hover {
+            background: var(--primary-light);
         }
 
         .topbar-actions {
@@ -180,10 +189,35 @@
             background: #d32f2f;
         }
 
+        /* Sidebar states */
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed);
+        }
+
+        .sidebar.collapsed .sidebar-header h2,
+        .sidebar.collapsed .user-details,
+        .sidebar.collapsed .menu-item span {
+            display: none;
+        }
+
+        .sidebar.collapsed .user-info {
+            justify-content: center;
+            padding: 10px;
+        }
+
+        .sidebar.collapsed .user-avatar {
+            margin-right: 0;
+        }
+
+        .main-content.expanded {
+            margin-left: var(--sidebar-collapsed);
+        }
+
         /* Content Area */
         .content {
             padding: 30px;
             flex: 1;
+            transition: all 0.3s ease;
         }
 
         .welcome-card {
@@ -436,7 +470,7 @@
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h2>Centro de Salud Esperanza</h2>
+            <h2>Metropolitano</h2>
         </div>
 
         <div class="user-info">
@@ -512,16 +546,22 @@
     </div>
 
     <script>
-        // Toggle sidebar on mobile
-        document.getElementById('toggleSidebar').addEventListener('click', function() {
-            document.getElementById('sidebar').classList.toggle('active');
+        // Toggle sidebar
+        const toggleBtn = document.getElementById('toggleSidebar');
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.querySelector('.main-content');
+
+        toggleBtn.addEventListener('click', function() {
+            if (window.innerWidth <= 768) {
+                sidebar.classList.toggle('active');
+            } else {
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('expanded');
+            }
         });
 
         // Close sidebar when clicking outside on mobile
         document.addEventListener('click', function(event) {
-            const sidebar = document.getElementById('sidebar');
-            const toggleBtn = document.getElementById('toggleSidebar');
-
             if (window.innerWidth <= 768 &&
                 !sidebar.contains(event.target) &&
                 !toggleBtn.contains(event.target) &&

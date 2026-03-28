@@ -1,0 +1,35 @@
+# Entorno Virtual
+venv/
+.venv/
+env/
+ENV/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.tox/
+.coverage
+htmlcov/
+
+# Django
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# IDEs y otros
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.bak
+
+# Logs
+*.log
+
+# Entorno
+.env
