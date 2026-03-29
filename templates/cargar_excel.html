@@ -1,49 +1,377 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Cargar Afiliados desde Excel</h2>
 
-<form id="formExcel" method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    <input type="file" name="archivo_excel" accept=".xlsx" required>
-    <button type="submit">Cargar Afiliados</button>
-</form>
+<!-- Tailwind CDN para este diseño premium -->
+<script src="https://cdn.tailwindcss.com"></script>
 
-<div id="loader" style="display:none; margin-top:10px;">Cargando... ⏳</div>
-<div id="resultado" style="margin-top:10px;"></div>
+<div class="max-w-6xl mx-auto py-10 px-6">
+    <!-- Header -->
+    <div class="flex items-center gap-4 mb-10">
+        <div class="w-14 h-14 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 11.707.707V19a2 2 0 01-2 2z" />
+            </svg>
+        </div>
+        <div>
+            <h1 class="text-3xl font-bold text-slate-800">Cargar Afiliados</h1>
+            <p class="text-slate-500 font-medium tracking-tight">Importación masiva desde archivo Excel</p>
+        </div>
+    </div>
 
-{% if messages %}
-    {% for message in messages %}
-        <p style="color:green">{{ message }}</p>
-    {% endfor %}
-{% endif %}
+    <!-- Upload Area Card -->
+    <div id="uploadStep" class="bg-white p-12 rounded-[2rem] shadow-xl border-b-8 border-blue-600 transition-all">
+        <div class="text-center">
+            <div id="dropZone" class="border-4 border-dashed border-slate-100 rounded-[2rem] p-12 hover:border-blue-400 hover:bg-blue-50/30 transition-all cursor-pointer group">
+                <div class="mb-6 inline-flex items-center justify-center w-24 h-24 bg-blue-50 text-blue-600 rounded-full group-hover:scale-110 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">Selecciona tu archivo .xlsx</h2>
+                <p class="text-slate-500 mb-8 max-w-sm mx-auto">Sube el archivo "Listado" para que el sistema procese los datos de los afiliados automáticamente.</p>
+                
+                <form id="formExcel" method="post" enctype="multipart/form-data" class="hidden">
+                    {% csrf_token %}
+                    <input type="file" id="fileInput" name="archivo_excel" accept=".xlsx" required>
+                </form>
+                
+                <button onclick="document.getElementById('fileInput').click()" class="px-8 py-4 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 hover:shadow-2xl hover:shadow-blue-200 transition-all shadow-xl">
+                    Examinar archivos
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Step (Hidden Initially) -->
+    <div id="previewStep" class="hidden animate-in fade-in slide-in-from-bottom-5 duration-500">
+        <div class="bg-white rounded-[2rem] shadow-2xl overflow-hidden mb-8">
+            <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                        <span class="w-8 h-8 bg-green-500 text-white rounded-lg flex items-center justify-center text-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </span>
+                        Vista Previa (Primeros 10 datos)
+                    </h3>
+                    <p class="text-slate-500 text-sm mt-1">Se detectaron <span id="totalRows" class="font-bold text-blue-600">0</span> registros listos para cargar.</p>
+                </div>
+                <div class="flex gap-4">
+                    <button onclick="resetUI()" class="px-6 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all">Cancelar</button>
+                    <button id="btnConfirmar" class="px-8 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-xl transition-all">Siguiente</button>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto p-4">
+                <table class="w-full text-left text-sm border-collapse">
+                    <thead class="bg-slate-100/50 text-slate-600 rounded-xl">
+                        <tr>
+                            <th class="p-4 font-bold uppercase tracking-wider">Fecha Nac</th>
+                            <th class="p-4 font-bold uppercase tracking-wider">DNI</th>
+                            <th class="p-4 font-bold uppercase tracking-wider">Apellidos y Nombres</th>
+                            <th class="p-4 font-bold uppercase tracking-wider">Sexo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="previewBody" class="divide-y divide-slate-100">
+                        <!-- JS injects rows here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Step (Hidden Initially) -->
+    <div id="progressStep" class="hidden">
+        <div class="bg-white p-12 rounded-[2rem] shadow-2xl text-center border-b-8 border-green-500">
+            <div class="mb-10 text-6xl font-black text-slate-800" id="percentComplete">0%</div>
+            
+            <div class="w-full bg-slate-100 h-6 rounded-full overflow-hidden mb-8 shadow-inner ring-4 ring-slate-50">
+                <div id="progressBar" class="bg-gradient-to-r from-blue-600 to-green-500 h-full w-0 transition-all duration-300 relative">
+                    <div class="absolute inset-0 bg-white/20 animate-pulse"></div>
+                </div>
+            </div>
+            
+            <p class="text-slate-500 font-medium text-lg leading-relaxed max-w-sm mx-auto">
+                <span id="progressMessage">Sincronizando afiliados con la base de datos de Metropolitano...</span>
+                <span id="currentBatch" class="block text-sm text-slate-400 mt-2">Cargando datos masivos</span>
+            </p>
+
+            <div id="finalSuccess" class="hidden mt-8 animate-bounce">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-green-50 text-green-600 rounded-full mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-800 mb-6">¡Carga Completada!</h3>
+                <a href="{% url 'afiliados' %}" class="px-10 py-4 bg-green-600 text-white font-bold rounded-2xl hover:bg-green-700 shadow-xl inline-block">Ver Lista de Afiliados</a>
+            </div>
+        </div>
+    </div>
+    </div>
+</div>
+
+<!-- SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-document.getElementById("formExcel").addEventListener("submit", function(e) {
-    e.preventDefault();
+// ... (existing code remains above)
+function startProcessing() {
+    document.getElementById('previewStep').classList.add('hidden');
+    document.getElementById('progressStep').classList.remove('hidden');
+    
+    processBatch(0);
+}
 
-    const form = e.target;
-    const formData = new FormData(form);
-    const loader = document.getElementById("loader");
-    const resultado = document.getElementById("resultado");
+// NUEVO: Funcionalidad Borrar Todo
+function confirmDeleteAll() {
+    Swal.fire({
+        title: '¿Estás completamente seguro?',
+        text: "¡Esta acción eliminará TODOS los afiliados y sus atenciones de forma permanente!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Sí, borrar todo',
+        cancelButtonText: 'Cancelar',
+        background: '#ffffff',
+        borderRadius: '2rem',
+        customClass: {
+            popup: 'rounded-[2rem]',
+            confirmButton: 'rounded-xl px-6 py-3 font-bold',
+            cancelButton: 'rounded-xl px-6 py-3 font-bold'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch("{% url 'eliminar_todos_afiliados' %}", {
+                method: "POST",
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    Swal.fire({
+                        title: '¡Eliminado!',
+                        text: data.message,
+                        icon: 'success',
+                        borderRadius: '2rem'
+                    }).then(() => location.reload());
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            });
+        }
+    });
+}
+// ...
+</script>
 
-    loader.style.display = "block";
-    resultado.innerHTML = "";
+<!-- Botón de Borrado al final -->
+<div class="max-w-6xl mx-auto px-6 mb-20">
+    <div class="bg-red-50 p-8 rounded-[2rem] border-2 border-dashed border-red-200 flex items-center justify-between group hover:bg-red-100/50 transition-all">
+        <div>
+            <h4 class="text-lg font-bold text-red-800">Zona de Peligro</h4>
+            <p class="text-red-600/70 text-sm">Borra permanentemente todos los registros para iniciar una carga limpia.</p>
+        </div>
+        <button onclick="confirmDeleteAll()" class="px-6 py-4 bg-red-600 text-white font-bold rounded-2xl hover:bg-red-700 shadow-xl shadow-red-200 transition-all active:scale-95">
+            ⚠️ Vaciar Base de Datos
+        </button>
+    </div>
+</div>
+
+<!-- SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+// FUNCIONALIDAD BORRAR TODO
+function confirmDeleteAll() {
+    Swal.fire({
+        title: '¿Estás completamente seguro?',
+        text: "¡Esta acción eliminará TODOS los afiliados y sus atenciones de forma permanente!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Sí, borrar todo',
+        cancelButtonText: 'Cancelar',
+        customClass: {
+            popup: 'rounded-[2rem]',
+            confirmButton: 'rounded-xl px-6 py-3 font-bold',
+            cancelButton: 'rounded-xl px-6 py-3 font-bold'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch("{% url 'eliminar_todos_afiliados' %}", {
+                method: "POST",
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    Swal.fire({
+                        title: '¡Eliminado!',
+                        text: data.message,
+                        icon: 'success',
+                        borderRadius: '2rem'
+                    }).then(() => location.reload());
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            });
+        }
+    });
+}
+</script>
+
+<!-- Botón de Borrado al final -->
+<div class="max-w-6xl mx-auto px-6 mb-20 mt-10">
+    <div class="bg-red-50 p-8 rounded-[2rem] border-2 border-dashed border-red-200 flex flex-col md:flex-row items-center justify-between gap-6 group hover:bg-red-100/50 transition-all">
+        <div>
+            <h4 class="text-lg font-bold text-red-800">Zona de Peligro</h4>
+            <p class="text-red-600/70 text-sm italic">Borra permanentemente todos los registros para iniciar una carga limpia desde cero.</p>
+        </div>
+        <button onclick="confirmDeleteAll()" class="w-full md:w-auto px-8 py-4 bg-red-600 text-white font-bold rounded-2xl hover:bg-red-700 shadow-xl shadow-red-200 transition-all active:scale-95">
+            ⚠️ Vaciar Base de Datos
+        </button>
+    </div>
+</div>
+
+<script>
+let tempFileData = null;
+// ... (rest of the JS)
+let totalRecordsFound = 0;
+
+// Selector de archivos
+document.getElementById('fileInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        uploadInitial(file);
+    }
+});
+
+// Paso 1: Subir y obtener Preview
+function uploadInitial(file) {
+    const formData = new FormData();
+    formData.append('archivo_excel', file);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    // Cambiar a vista de carga temporal
+    const dropZone = document.getElementById('dropZone');
+    const originalHTML = dropZone.innerHTML;
+    dropZone.innerHTML = '<div class="py-12"><div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mx-auto"></div><p class="mt-4 text-slate-600 font-bold">Analizando archivo...</p></div>';
 
     fetch("{% url 'cargar_excel' %}", {
         method: "POST",
-        body: formData,
+        body: formData
     })
-    .then(res => res.text())  // Devuelve el HTML del redirect
-    .then(() => {
-        loader.style.display = "none";
-        resultado.innerHTML = "Archivo cargado correctamente ✅";
-        form.reset();
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'ok') {
+            showPreview(data);
+        } else {
+            alert("Error: " + data.message);
+            resetUI();
+        }
     })
     .catch(err => {
-        loader.style.display = "none";
-        resultado.innerHTML = "Error al cargar los afiliados";
         console.error(err);
+        resetUI();
     });
-});
+}
+
+function showPreview(data) {
+    document.getElementById('uploadStep').classList.add('hidden');
+    document.getElementById('previewStep').classList.remove('hidden');
+    
+    document.getElementById('totalRows').innerText = data.total;
+    totalRecordsFound = data.total;
+
+    const body = document.getElementById('previewBody');
+    body.innerHTML = '';
+    
+    data.preview.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 transition-colors";
+        tr.innerHTML = `
+            <td class="p-4 text-slate-700 font-medium">${row.fecha_nac || '-'}</td>
+            <td class="p-4 font-mono text-blue-600 font-black">${row.dni || '-'}</td>
+            <td class="p-4">
+                <div class="font-bold text-slate-800">${row.apellido_paterno} ${row.apellido_materno}</div>
+                <div class="text-slate-400 text-xs">${row.nombres}</div>
+            </td>
+            <td class="p-4">
+                <span class="px-3 py-1 bg-slate-100 rounded-full text-[11px] font-black uppercase text-slate-500">${row.sexo || 'N/A'}</span>
+            </td>
+        `;
+        body.appendChild(tr);
+    });
+
+    document.getElementById('btnConfirmar').onclick = function() {
+        startProcessing();
+    };
+}
+
+// Paso 2: Procesamiento masivo con barra
+function startProcessing() {
+    document.getElementById('previewStep').classList.add('hidden');
+    document.getElementById('progressStep').classList.remove('hidden');
+    
+    processBatch(0);
+}
+
+function processBatch(index) {
+    fetch("{% url 'cargar_excel' %}", {
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: json_data = JSON.stringify({
+            'action': 'process',
+            'batch_index': index
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'progress') {
+            const percent = data.percent;
+            document.getElementById('progressBar').style.width = percent + "%";
+            document.getElementById('percentComplete').innerText = percent + "%";
+            document.getElementById('currentBatch').innerText = `Lote ${index + 1} de ${data.total_batches}`;
+            
+            if (percent < 100) {
+                processBatch(index + 1);
+            } else {
+                finishUI();
+            }
+        } else {
+            alert("Error en procesamiento: " + data.message);
+        }
+    });
+}
+
+function finishUI() {
+    document.getElementById('progressMessage').innerText = "¡Sincronización Completa!";
+    document.getElementById('progressMessage').classList.add('text-green-600');
+    document.getElementById('currentBatch').innerText = `Se cargaron exitosamente los ${totalRecordsFound} afiliados.`;
+    document.getElementById('finalSuccess').classList.remove('hidden');
+}
+
+function resetUI() {
+    location.reload();
+}
 </script>
+
+<style>
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.animate-in { animation: slideUp 0.6s ease-out forwards; }
+</style>
+
 {% endblock %}

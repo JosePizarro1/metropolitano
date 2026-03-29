@@ -12,7 +12,7 @@ class Afiliado(models.Model):
     # Identificador automático
     id = models.BigAutoField(primary_key=True)
 
-    dni = models.CharField(max_length=15, db_index=True, null=True, blank=True)  # No unique
+    dni = models.CharField(max_length=50, db_index=True, null=True, blank=True)  # No unique
     apellido_paterno = models.CharField(max_length=100, db_index=True, null=True, blank=True)
     apellido_materno = models.CharField(max_length=100, blank=True, null=True, db_index=True)
     nombres = models.CharField(max_length=150, db_index=True, null=True, blank=True)

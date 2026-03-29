@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+import os
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -313,50 +314,138 @@ def atenciones_create(request):
 
 
 def cargar_afiliados_excel(request):
-    if request.method == "POST" and request.FILES.get("archivo_excel"):
-        excel_file = request.FILES["archivo_excel"]
-        try:
-            # Leer columnas A-F de la hoja "Listado"
-            df = pd.read_excel(excel_file, engine='openpyxl', sheet_name="Listado", usecols="A:F", header=0)
-            df.columns = [str(c).replace(",", "").strip().upper() for c in df.columns]
+    """
+    Controlador de carga masiva Multi-paso:
+    1. Upload inicial -> Retorna Preview + Total
+    2. Peticiones AJAX -> Procesa bloques (batches) con barra de progreso
+    """
+    if request.method == "POST":
+        # CASO 2: PROCESAMIENTO POR LOTES (Vía AJAX)
+        if request.headers.get('Content-Type') == 'application/json':
+            import json
+            data = json.loads(request.body)
+            if data.get('action') == 'process':
+                batch_index = data.get('batch_index', 0)
+                file_path = request.session.get('temp_excel_path')
+                sheet_name = request.session.get('temp_excel_sheet', 'Listado')
+                batch_size = 500 # Procesamos de 500 en 500
 
-            batch_size = 5000
-            afiliados_to_create = []
+                if not file_path or not os.path.exists(file_path):
+                    return JsonResponse({'status': 'error', 'message': 'Archivo no encontrado en servidor. Reintente subirlo.'})
 
-            for _, row in df.iterrows():
-                # Fecha
-                fecha_nac = pd.to_datetime(row["FECHA NAC"], dayfirst=True, errors='coerce') if pd.notna(row["FECHA NAC"]) else None
+                try:
+                    # Leer solo el pedazo necesario para no saturar RAM
+                    skiprows = (batch_index * batch_size) + 1 # saltamos el header
+                    df_batch = pd.read_excel(file_path, engine='openpyxl', sheet_name=sheet_name, usecols="A:F", skiprows=range(1, skiprows), nrows=batch_size, header=0, dtype=str)
+                    
+                    if df_batch.empty:
+                        return JsonResponse({'status': 'progress', 'percent': 100, 'total': 0})
 
-                # Sexo
-                sexo_raw = str(row["SEXO"]).strip().capitalize() if pd.notna(row["SEXO"]) else None
-                sexo = sexo_raw[0] if sexo_raw in ["Masculino", "Femenino"] else None
-
-                # DNI como string (sin unique)
-                dni = str(int(row["DNI"])).zfill(8) if pd.notna(row["DNI"]) else None
-
-                afiliado = Afiliado(
-                    fecha_nacimiento=fecha_nac,
-                    dni=dni,
-                    apellido_paterno=str(row["APE PATERNO"]).strip() if pd.notna(row["APE PATERNO"]) else None,
-                    apellido_materno=str(row["APE MATERNO"]).strip() if pd.notna(row["APE MATERNO"]) else None,
-                    nombres=str(row["NOMBRES"]).strip() if pd.notna(row["NOMBRES"]) else None,
-                    sexo=sexo
-                )
-                afiliados_to_create.append(afiliado)
-
-                if len(afiliados_to_create) >= batch_size:
-                    Afiliado.objects.bulk_create(afiliados_to_create)
+                    df_batch.columns = [str(c).replace(",", "").strip().upper() for c in df_batch.columns]
+                    
                     afiliados_to_create = []
+                    for _, row in df_batch.iterrows():
+                        # 🧼 LIMPIEZA DNI (Preservar ceros a la izquierda y quitar .0)
+                        dni_raw = row.get("DNI")
+                        if pd.notna(dni_raw):
+                            dni = str(dni_raw).strip()
+                            if dni.endswith('.0'):
+                                dni = dni[:-2]
+                        else:
+                            dni = None
 
-            if afiliados_to_create:
-                Afiliado.objects.bulk_create(afiliados_to_create)
+                        fecha_nac = pd.to_datetime(row.get("FECHA NAC"), dayfirst=True, errors='coerce') if pd.notna(row.get("FECHA NAC")) else None
+                        sexo_raw = str(row.get("SEXO")).strip().capitalize() if pd.notna(row.get("SEXO")) else None
+                        sexo = sexo_raw[0] if sexo_raw in ["Masculino", "Femenino"] else None
+                        
+                        afiliados_to_create.append(Afiliado(
+                            fecha_nacimiento=fecha_nac,
+                            dni=dni,
+                            apellido_paterno=str(row.get("APE PATERNO")).strip() if pd.notna(row.get("APE PATERNO")) else None,
+                            apellido_materno=str(row.get("APE MATERNO")).strip() if pd.notna(row.get("APE MATERNO")) else None,
+                            nombres=str(row.get("NOMBRES")).strip() if pd.notna(row.get("NOMBRES")) else None,
+                            sexo=sexo
+                        ))
+                    
+                    Afiliado.objects.bulk_create(afiliados_to_create)
+                    
+                    # Calcular progreso
+                    total_rows = request.session.get('total_excel_rows', 1)
+                    processed_so_far = (batch_index + 1) * batch_size
+                    percent = min(100, int((processed_so_far / total_rows) * 100))
+                    
+                    return JsonResponse({
+                        'status': 'progress', 
+                        'percent': percent,
+                        'total_batches': (total_rows // batch_size) + 1
+                    })
 
-            messages.success(request, "Afiliados cargados correctamente ✅")
-            return redirect("cargar_excel")
+                except Exception as e:
+                    return JsonResponse({'status': 'error', 'message': str(e)})
 
-        except Exception as e:
-            messages.error(request, f"Error al procesar el archivo: {e}")
-            return redirect("cargar_excel")
+        # CASO 1: SUBIDA INICIAL -> GENERAR PREVIEW
+        elif request.FILES.get("archivo_excel"):
+            excel_file = request.FILES["archivo_excel"]
+            try:
+                # Guardar archivo temporal en /tmp
+                import tempfile
+                temp_dir = tempfile.gettempdir()
+                temp_filename = f"upload_{request.user.id}_{int(timezone.now().timestamp())}.xlsx"
+                temp_path = os.path.join(temp_dir, temp_filename)
+                
+                with open(temp_path, 'wb+') as destination:
+                    for chunk in excel_file.chunks():
+                        destination.write(chunk)
+                
+                # Cargar el Excel y buscar la hoja
+                xl = pd.ExcelFile(temp_path, engine='openpyxl')
+                sheet_name = "Listado" if "Listado" in xl.sheet_names else xl.sheet_names[0]
+                
+                # Leer conteo total y primeros 10 para preview
+                df_full = pd.read_excel(xl, sheet_name=sheet_name, usecols="A:F", header=0, dtype=str)
+                total_rows = len(df_full)
+                df_preview = df_full.head(10)
+                
+                # Formatear preview para JSON
+                df_preview.columns = [str(c).replace(",", "").strip().upper() for c in df_preview.columns]
+                preview_data = []
+                for _, row in df_preview.iterrows():
+                    # 🧼 LIMPIEZA DNI (Preservar ceros a la izquierda y quitar .0)
+                    dni_raw = row.get("DNI")
+                    if pd.notna(dni_raw):
+                        dni = str(dni_raw).strip()
+                        if dni.endswith('.0'):
+                            dni = dni[:-2]
+                    else:
+                        dni = "-"
+
+                    # 🧼 LIMPIEZA FECHA (Quitar 00:00:00)
+                    fecha_raw = pd.to_datetime(row.get("FECHA NAC"), dayfirst=True, errors='coerce') if pd.notna(row.get("FECHA NAC")) else None
+                    fecha_fmt = fecha_raw.strftime('%d/%m/%Y') if fecha_raw and not pd.isna(fecha_raw) else "-"
+
+                    preview_data.append({
+                        'dni': dni,
+                        'apellido_paterno': str(row.get("APE PATERNO")).strip() if pd.notna(row.get("APE PATERNO")) else "",
+                        'apellido_materno': str(row.get("APE MATERNO")).strip() if pd.notna(row.get("APE MATERNO")) else "",
+                        'nombres': str(row.get("NOMBRES")).strip() if pd.notna(row.get("NOMBRES")) else "",
+                        'fecha_nac': fecha_fmt,
+                        'sexo': str(row.get("SEXO")).strip() if pd.notna(row.get("SEXO")) else "N/A",
+                    })
+
+                # Guardar info en sesión
+                request.session['temp_excel_path'] = temp_path
+                request.session['temp_excel_sheet'] = sheet_name
+                request.session['total_excel_rows'] = total_rows
+                
+                return JsonResponse({
+                    'status': 'ok',
+                    'total': total_rows,
+                    'preview': preview_data,
+                    'sheet_used': sheet_name
+                })
+
+            except Exception as e:
+                return JsonResponse({'status': 'error', 'message': f"Error al leer Excel: {str(e)}"})
 
     return render(request, "cargar_excel.html")
 
@@ -977,3 +1066,15 @@ def create_users_from_excel(request):
             return redirect("create_users_excel")
 
     return render(request, "create_users_excel.html", {"stats": stats, "logs": logs})
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def eliminar_todos_afiliados(request):
+    if request.method == "POST":
+        try:
+            total = Afiliado.objects.count()
+            Afiliado.objects.all().delete()
+            return JsonResponse({'status': 'ok', 'message': f'Se han eliminado {total} afiliados y toda su información relacionada.'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    return JsonResponse({'status': 'error', 'message': 'Método no permitido'}, status=400)

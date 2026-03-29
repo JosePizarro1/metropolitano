@@ -13,7 +13,7 @@ urlpatterns = [
     path('afiliados/', afiliados, name='afiliados'),
     path('perfil/', settings, name='settings'),
     path('afiliados/data/', afiliados_data, name='afiliados_data'),
-    #path("cargar_excel/", cargar_afiliados_excel, name="cargar_excel"),
+    path("cargar_excel/", cargar_afiliados_excel, name="cargar_excel"),
     path("afiliado/<int:afiliado_id>/editar/", editar_afiliado, name="editar_afiliado"),
     path("atenciones/", atenciones_view, name="atenciones"),
     path("atenciones/list/<int:afiliado_id>/", atenciones_list, name="atenciones_list"),
@@ -30,4 +30,5 @@ urlpatterns = [
     path('reportes/', reportes_view, name='reportes'),
     path('afiliados/<int:afiliado_id>/eliminar-servicio/', eliminar_servicio_cumplido, name='eliminar_servicio_cumplido'),
     path('afiliados/<int:afiliado_id>/guardar-observacion/', guardar_observacion, name='guardar_observacion'),
+    path("eliminar_todos_afiliados/", eliminar_todos_afiliados, name="eliminar_todos_afiliados"),
 ]
