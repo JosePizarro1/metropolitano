@@ -13,7 +13,7 @@ SECRET_KEY = 'django-insecure-d2va=@iyv88u(ni938!#18@5(d@3q^(#dp9*x-i(o3)a^q)ba2
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["mcais.pythonanywhere.com", "www.mcais.pythonanywhere.com", "127.0.0.1", "localhost"]
+ALLOWED_HOSTS = ["mcais.pythonanywhere.com", "www.mcais.pythonanywhere.com", "127.0.0.1", "localhost", 'seguimientoati.vercel.app', '.vercel.app' ]
 
 LOGIN_URL = "/"            # si no está logueado, lo manda al login
 LOGIN_REDIRECT_URL = "/dashboard/"   # después de loguearse lo manda al dashboard
