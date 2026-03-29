@@ -1,4 +1,9 @@
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde .env
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -13,7 +18,19 @@ SECRET_KEY = 'django-insecure-d2va=@iyv88u(ni938!#18@5(d@3q^(#dp9*x-i(o3)a^q)ba2
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["mcais.pythonanywhere.com", "www.mcais.pythonanywhere.com", "127.0.0.1", "localhost", 'seguimientoati.vercel.app', '.vercel.app' ]
+ALLOWED_HOSTS = [
+    "mcais.pythonanywhere.com", 
+    "www.mcais.pythonanywhere.com", 
+    "127.0.0.1", 
+    "localhost", 
+    'seguimientoati.vercel.app', 
+    '.vercel.app' 
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://seguimientoati.vercel.app',
+    'https://*.vercel.app'
+]
 
 LOGIN_URL = "/"            # si no está logueado, lo manda al login
 LOGIN_REDIRECT_URL = "/dashboard/"   # después de loguearse lo manda al dashboard
@@ -33,6 +50,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -71,11 +89,15 @@ WSGI_APPLICATION = 'saludesperanza.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+import dj_database_url
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        # Por defecto usa SQLite local (si no existe la variable DATABASE_URL)
+        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
+        conn_max_age=600,
+        ssl_require=True if os.environ.get('DATABASE_URL') else False
+    )
 }
 
 
@@ -112,6 +134,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+WHITENOISE_MANIFEST_STRICT = False
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
