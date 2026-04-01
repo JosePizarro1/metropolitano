@@ -592,14 +592,22 @@ def afiliados_data(request):
     data = []
     for a in page_qs:
         atenciones = getattr(a, 'atenciones').all()
-        servicios_hechos = set()
+        servicios_hechos_lista = []
+        servicios_hechos_nombres = set()
         for att in atenciones:
             if att.fecha_atencion and getattr(att.fecha_atencion, "year", None) == anio_actual:
                 if att.servicio and att.servicio.nombre:
-                    servicios_hechos.add(att.servicio.nombre)
+                    servicios_hechos_lista.append({
+                        'nombre': att.servicio.nombre,
+                        'fecha': att.fecha_atencion.strftime("%d/%m/%Y")
+                    })
+                    servicios_hechos_nombres.add(att.servicio.nombre)
 
-        servicios_cumplidos = ', '.join(sorted(servicios_hechos)) if servicios_hechos else "-"
-        servicios_pendientes = ', '.join(sorted(set(servicios_todos) - servicios_hechos)) if servicios_todos else "-"
+        # Ordenar por nombre para consistencia
+        servicios_hechos_lista.sort(key=lambda x: x['nombre'])
+        
+        servicios_cumplidos = servicios_hechos_lista if servicios_hechos_lista else "-"
+        servicios_pendientes = ', '.join(sorted(set(servicios_todos) - servicios_hechos_nombres)) if servicios_todos else "-"
 
         data.append({
             'id': a.id,

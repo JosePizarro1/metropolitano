@@ -168,6 +168,20 @@
     border: 1px solid #e5e7eb;
     color: #6b7280;
 }
+
+/* Estilos para fecha debajo del badge */
+.servicio-badge-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 2px;
+}
+.servicio-date {
+    font-size: 9px;
+    color: #475569;
+    font-weight: 500;
+    margin-top: 1px;
+}
 /* Badges clickeables */
 .clickable-badge {
     cursor: pointer !important;
@@ -296,48 +310,43 @@ $(document).ready(function() {
     orderable: false,
     searchable: false,
     render: function(data, type, row) {
-        // Caso cuando no hay datos o es "-" o vacío
+        // Caso cuando no hay datos
         if (!data || data === '-' || data === '' || data === '0' || data === 0) {
             return '<span class="status-badge status-vacio" title="Sin servicios cumplidos">-</span>';
         }
 
-        // Si es un string que podría contener servicios (con o sin comas)
-        if (typeof data === 'string') {
-            let servicios = [];
-
-            // Si contiene comas, separarlos
-            if (data.includes(',')) {
-                servicios = data.split(',').map(s => s.trim()).filter(s => s !== '-' && s !== '');
-            } else {
-                // Si es un solo servicio, crear array con ese elemento
-                servicios = [data.trim()];
-            }
-
-            // Si después de filtrar no hay servicios
-            if (servicios.length === 0) {
+        // Si es un array de objetos (nuevo formato con fecha)
+        if (Array.isArray(data)) {
+            if (data.length === 0) {
                 return '<span class="status-badge status-vacio" title="Sin servicios cumplidos">-</span>';
             }
 
-            // Si solo hay un servicio, mostrar el badge individual
-            if (servicios.length === 1) {
-                const servicio = servicios[0];
-                return `<span class="servicio-badge clickable-badge-cumplido"
-                         title="Click para eliminar: ${servicio}"
-                         data-afiliado-id="${row.id}"
-                         data-servicio="${servicio}">${servicio}</span>`;
-            }
+            const badges = data.map(item => {
+                return `
+                    <div class="servicio-badge-wrapper">
+                        <span class="servicio-badge clickable-badge-cumplido"
+                              title="Click para eliminar: ${item.nombre}"
+                              data-afiliado-id="${row.id}"
+                              data-servicio="${item.nombre}">${item.nombre}</span>
+                        <div class="servicio-date">${item.fecha}</div>
+                    </div>`;
+            });
+            return `<div class="servicios-container">${badges.join('')}</div>`;
+        }
 
-            // Si hay múltiples servicios
+        // Fallback: Si es un string (formato antiguo)
+        if (typeof data === 'string') {
+            let servicios = data.split(',').map(s => s.trim()).filter(s => s !== '-' && s !== '');
+            if (servicios.length === 0) return '<span class="status-badge status-vacio">-</span>';
+            
             const badges = servicios.map(servicio => {
                 return `<span class="servicio-badge clickable-badge-cumplido"
-                         title="Click para eliminar: ${servicio}"
                          data-afiliado-id="${row.id}"
                          data-servicio="${servicio}">${servicio}</span>`;
             });
             return `<div class="servicios-container">${badges.join('')}</div>`;
         }
 
-        // Si es solo un número (backup por si acaso)
         return `<span class="status-badge status-completado">${data}</span>`;
     }
 },
