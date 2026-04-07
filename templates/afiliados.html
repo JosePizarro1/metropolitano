@@ -10,240 +10,563 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
-/* Tabla */
-#afiliadosTable {
-    border-collapse: separate !important;
-    border-spacing: 0 8px;
-    background: #fff;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
-}
-#afiliadosTable th {
-    background-color: #1976d2;
-    color: white;
-    font-weight: 500;
-    text-align: center;
-    padding: 10px;
-}
-#afiliadosTable td {
-    background: #f9f9f9;
-    text-align: center;
-    padding: 10px;
-}
-#afiliadosTable tr:hover td {
-    background: #e3f2fd;
-}
+    /* Importar Fuente Moderna */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-/* Botón editar */
-.btn-editar {
-    display: inline-block;
-    color: #fff;
-    background: #1976d2;
-    padding: 8px 10px;
-    border-radius: 50%;
-    text-align: center;
-    transition: all 0.2s ease-in-out;
-    cursor: pointer;
-}
-.btn-editar i { font-size: 16px; }
-.btn-editar:hover { background: #1565c0; transform: scale(1.1); }
-
-/* Modal */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 9999;
-    left: 0; top: 0;
-    width: 100%; height: 100%;
-    background-color: rgba(0,0,0,0.5);
-}
-.modal-content {
-    background: #fff;
-    margin: 5% auto;
-    padding: 20px;
-    border-radius: 10px;
-    width: 420px;
-    position: relative;
-}
-.close-modal {
-    position: absolute;
-    top: 10px; right: 15px;
-    font-size: 20px;
-    cursor: pointer;
-}
-
-/* Inputs del form */
-#formEditarAfiliado label {
-    font-weight: 600;
-    display: block;
-    margin-top: 12px;
-    text-align: left;
-}
-#formEditarAfiliado input, #formEditarAfiliado select {
-    width: 100%;
-    padding: 8px 10px;
-    margin-top: 5px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-}
-#formEditarAfiliado button {
-    margin-top: 20px;
-    width: 100%;
-    padding: 10px;
-    background: #1976d2;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 16px;
-    cursor: pointer;
-}
-#formEditarAfiliado button:hover {
-    background: #1565c0;
-}
-
-
-/* Badges de servicios mejorados */
-.servicios-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    justify-content: center;
-}
-
-.servicio-badge {
-    display: inline-block;
-    padding: 5px 10px;
-    border-radius: 10px;
-    font-size: 10px;
-    font-weight: 600;
-    color: #1f2937;
-    text-align: center;
-    transition: all 0.3s ease;
-    animation: fadeInUp 0.5s ease;
-    cursor: default;
-    margin: 2px;
-}
-
-/* Animación para los badges */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(5px);
+    :root {
+        --primary-gradient: linear-gradient(135deg, #4f46e5, #4338ca);
+        --success-gradient: linear-gradient(135deg, #10b981, #059669);
+        --pending-gradient: linear-gradient(135deg, #6366f1, #4f46e5);
+        --surface-card: #ffffff;
+        --text-main: #1e293b;
+        --text-muted: #64748b;
+        --bg-light: #f8fafc;
+        --border-color: #e2e8f0;
     }
-    to {
-        opacity: 1;
-        transform: translateY(0);
+
+    #afiliados-page-content {
+        font-family: 'Inter', sans-serif;
+        color: var(--text-main);
     }
-}
 
-/* Verde pastel para servicios cumplidos */
-.servicio-badge {
-    background: linear-gradient(135deg, #a7f3b7, #6ee7b7);
-    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.2);
-    border: 1px solid #a7f3d0;
-}
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
 
-/* Azul pastel para servicios pendientes */
-.badge-pendiente {
-    background: linear-gradient(135deg, #c7d2fe, #a5b4fc);
-    box-shadow: 0 1px 3px rgba(99, 102, 241, 0.2);
-    border: 1px solid #c7d2fe;
-}
+    .page-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #0f172a;
+        letter-spacing: -0.025em;
+        margin: 0;
+    }
 
-.status-completado {
-    background: linear-gradient(135deg, #37d651, #6ee76e);
-    border: 1px solid #a7f3d0;
-    color: #1f2937;
-}
+    /* Card Container */
+    .table-card {
+        background: var(--surface-card);
+        border-radius: 16px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        border: 1px solid var(--border-color);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
 
-.status-pendiente {
-    background: linear-gradient(135deg, #c7d2fe, #a5b4fc);
-    border: 1px solid #c7d2fe;
-    color: #1f2937;
-}
+    /* DataTables Overrides */
+    .dataTables_wrapper .dataTables_length select {
+        border-radius: 8px;
+        padding: 4px 8px;
+        border: 1px solid var(--border-color);
+        background-color: white;
+    }
 
-.status-vacio {
-    background: linear-gradient(135deg, #e5e7eb, #d1d5db);
-    border: 1px solid #e5e7eb;
-    color: #6b7280;
-}
+    .dataTables_wrapper .dataTables_filter input {
+        border-radius: 10px;
+        padding: 10px 15px;
+        border: 1px solid var(--border-color);
+        min-width: 300px;
+        margin-left: 10px;
+        transition: all 0.2s;
+    }
 
-/* Estilos para fecha debajo del badge */
-.servicio-badge-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin: 2px;
-}
-.servicio-date {
-    font-size: 9px;
-    color: #475569;
-    font-weight: 500;
-    margin-top: 1px;
-}
-/* Badges clickeables */
-.clickable-badge {
-    cursor: pointer !important;
-    transition: all 0.3s ease !important;
-}
+    .dataTables_wrapper .dataTables_filter input:focus {
+        outline: none;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
 
-.clickable-badge:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
-    filter: brightness(1.1) !important;
-}
-/* Nuevos estilos para la columna de observaciones */
-.observaciones-container {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 5px;
-}
+    /* Table Style */
+    #afiliadosTable {
+        border-collapse: separate !important;
+        border-spacing: 0;
+        border: none !important;
+        margin-top: 20px !important;
+    }
 
-.observacion-input {
-    width: 100%;
-    padding: 6px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 12px;
-    transition: border-color 0.3s ease;
-}
+    #afiliadosTable tbody td {
+        padding: 8px 6px;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--bg-light);
+        font-size: 0.8125rem;
+        background: transparent;
+    }
 
-.observacion-input:focus {
-    border-color: #1976d2;
-    outline: none;
-}
+    #afiliadosTable thead th {
+        background: #f1f5f9;
+        color: #475569;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        padding: 10px 8px;
+        border-bottom: 1px solid var(--border-color);
+        text-align: center;
+        white-space: nowrap;
+    }
 
-.observacion-label {
-    font-size: 10px;
-    font-weight: 600;
-    color: #1f2937;
-    margin-bottom: 2px;
-}
+    #afiliadosTable tbody tr {
+        transition: background-color 0.2s;
+    }
 
-/* Ajustar el ancho de la columna si es necesario */
-#afiliadosTable td:nth-child(8) {
-    min-width: 250px; /* Ajusta según necesites */
-}
+    #afiliadosTable tbody tr:hover {
+        background-color: #f8fafc !important;
+    }
+
+    /* Gender Icons */
+    .gender-icon {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        margin: 0 auto;
+    }
+
+    .male-icon {
+        background-color: #dbeafe;
+        color: #2563eb;
+    }
+
+    .female-icon {
+        background-color: #fce7f3;
+        color: #db2777;
+    }
+
+    /* Gender + Age cell */
+    .gender-age-cell {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .age-badge {
+        font-size: 0.58rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        padding: 2px 6px;
+        border-radius: 20px;
+        white-space: nowrap;
+        text-transform: uppercase;
+    }
+
+    .age-nino      { background: #e0f2fe; color: #0369a1; }
+    .age-adolescente { background: #ede9fe; color: #6d28d9; }
+    .age-joven     { background: #d1fae5; color: #065f46; }
+    .age-adulto    { background: #fef3c7; color: #92400e; }
+    .age-mayor     { background: #fee2e2; color: #991b1b; }
+
+    .age-badge { cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+    .age-badge:hover { transform: scale(1.12); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+
+    /* Legend Modal */
+    #leyendaEdadModal {
+        display: none;
+        position: fixed;
+        z-index: 3000;
+        left: 0; top: 0;
+        width: 100%; height: 100%;
+        background: rgba(15,23,42,0.55);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+    }
+
+    .leyenda-modal-content {
+        background: #ffffff;
+        margin: 8% auto;
+        padding: 0;
+        width: 92%;
+        max-width: 420px;
+        border-radius: 24px;
+        box-shadow: 0 30px 60px -12px rgba(0,0,0,0.25);
+        overflow: hidden;
+        animation: modalSlideUp 0.35s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    .leyenda-header {
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        padding: 1.5rem 1.75rem 1.25rem;
+        position: relative;
+    }
+
+    .leyenda-header h4 {
+        margin: 0;
+        color: #ffffff;
+        font-size: 1.1rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .leyenda-header p {
+        margin: 4px 0 0;
+        color: rgba(255,255,255,0.75);
+        font-size: 0.78rem;
+    }
+
+    .close-leyenda {
+        position: absolute;
+        right: 18px; top: 16px;
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: white;
+        width: 28px; height: 28px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 1.1rem;
+        line-height: 1;
+        display: flex; align-items: center; justify-content: center;
+        transition: background 0.2s;
+    }
+    .close-leyenda:hover { background: rgba(255,255,255,0.35); }
+
+    .leyenda-body {
+        padding: 1.25rem 1.75rem 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .leyenda-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: 14px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        transition: transform 0.15s;
+    }
+    .leyenda-row:hover { transform: translateX(4px); }
+
+    .leyenda-pill {
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        padding: 3px 10px;
+        border-radius: 20px;
+        text-transform: uppercase;
+        min-width: 80px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    .leyenda-rango {
+        font-size: 0.82rem;
+        color: #475569;
+        font-weight: 500;
+    }
+
+    /* Badges */
+    .servicio-badge {
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        white-space: nowrap;
+        border: none;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .clickable-badge-cumplido {
+        background: var(--success-gradient);
+        color: white;
+    }
+
+    .badge-pendiente {
+        background: var(--pending-gradient);
+        color: white;
+    }
+
+    .status-vacio {
+        background: #f1f5f9;
+        color: #94a3b8;
+        padding: 4px 12px;
+        border-radius: 8px;
+        font-size: 0.75rem;
+    }
+
+    /* Observations Section */
+    .observaciones-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 8px;
+    }
+
+    .obs-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .observacion-label {
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        margin-bottom: 2px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .observacion-input {
+        background: #f8fafc;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 0.75rem;
+        transition: all 0.2s;
+    }
+
+    .observacion-input:focus {
+        background: white;
+        border-color: #4f46e5;
+        outline: none;
+    }
+
+    /* Action Buttons */
+    .btn-editar {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: white;
+        color: #4f46e5;
+        border: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        margin: 0 auto;
+    }
+
+    .btn-editar:hover {
+        background: #4f46e5;
+        color: white;
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+    }
+
+    /* Pagination Styling */
+    .dataTables_paginate .paginate_button.current {
+        background: #4f46e5 !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 8px !important;
+    }
+
+    .dataTables_paginate .paginate_button:hover {
+        background: #f1f5f9 !important;
+        border: none !important;
+        border-radius: 8px !important;
+    }
+
+    /* Wrapper and Date */
+    .servicio-badge-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 4px;
+    }
+
+    .servicio-date {
+        font-size: 0.65rem;
+        color: var(--text-muted);
+        margin-top: 3px;
+        font-weight: 500;
+    }
+
+    .servicios-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: center;
+    }
+
+    /* Fade in animation */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    #afiliadosTable tbody tr {
+        animation: fadeIn 0.3s ease-out forwards;
+    }
+
+    /* Modal Styling */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 2000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(15, 23, 42, 0.5);
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-content {
+        background-color: white;
+        margin: 5% auto;
+        padding: 2rem;
+        border: none;
+        width: 90%;
+        max-width: 500px;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        position: relative;
+        animation: modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes modalSlideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .close-modal {
+        position: absolute;
+        right: 20px;
+        top: 20px;
+        color: var(--text-muted);
+        font-size: 24px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: color 0.2s;
+        line-height: 1;
+    }
+
+    .close-modal:hover {
+        color: var(--danger);
+    }
+
+    #formEditarAfiliado label {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+        margin-top: 16px;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+
+    #formEditarAfiliado input,
+    #formEditarAfiliado select {
+        width: 100%;
+        padding: 12px 16px;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        background: #f8fafc;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+    }
+
+    #formEditarAfiliado input:focus,
+    #formEditarAfiliado select:focus {
+        outline: none;
+        border-color: var(--primary);
+        background: white;
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+    }
+
+    #formEditarAfiliado button[type="submit"] {
+        width: 100%;
+        margin-top: 24px;
+        padding: 14px;
+        border-radius: 12px;
+        border: none;
+        background: var(--primary-gradient);
+        color: white;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+    }
+
+    #formEditarAfiliado button[type="submit"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.4);
+    }
 </style>
 
-<table id="afiliadosTable" class="display" style="width:100%">
-    <thead>
-        <tr>
-            <th>DNI</th>
-            <th>Apellido Paterno</th>
-            <th>Apellido Materno</th>
-            <th>Nombres</th>
-            <th>Sexo</th>
-            <th>Fecha Nacimiento</th>
-            <th>Servicios Cumplidos</th>
-            <th>Servicios Pendientes</th>
-            <th>Observaciones</th> <!-- Nueva columna -->
-            <th>Acciones</th>
-        </tr>
-    </thead>
-</table>
+<div id="afiliados-page-content">
+    <div class="page-header">
+    </div>
+
+    <div class="table-card">
+        <table id="afiliadosTable" class="display" style="width:100%">
+            <thead>
+                <tr>
+                    <th style="width: 80px;">DNI</th>
+                    <th>A. Paterno</th>
+                    <th>A. Materno</th>
+                    <th>Nombres</th>
+                    <th style="width: 40px;">Sexo</th>
+                    <th style="width: 80px;">Fec. Nac.</th>
+                    <th style="width: 100px;">Celular</th>
+                    <th>Servicios Cumplidos</th>
+                    <th>Servicios Pendientes</th>
+                    <th>Observaciones</th>
+                    <th style="width: 50px;">Acciones</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Leyenda Etaria -->
+<div id="leyendaEdadModal">
+    <div class="leyenda-modal-content">
+        <div class="leyenda-header">
+            <button class="close-leyenda" id="closeLeyenda">&times;</button>
+            <h4><i class="fas fa-users"></i> Clasificación por Edad</h4>
+            <p>Rangos utilizados para categorizar a los afiliados</p>
+        </div>
+        <div class="leyenda-body">
+            <div class="leyenda-row">
+                <span class="leyenda-pill age-nino">Niño</span>
+                <span class="leyenda-rango">0 años &mdash; 11 años, 11 meses y 29 días</span>
+            </div>
+            <div class="leyenda-row">
+                <span class="leyenda-pill age-adolescente">Adolescente</span>
+                <span class="leyenda-rango">12 años &mdash; 17 años, 11 meses y 29 días</span>
+            </div>
+            <div class="leyenda-row">
+                <span class="leyenda-pill age-joven">Joven</span>
+                <span class="leyenda-rango">18 años &mdash; 29 años, 11 meses y 29 días</span>
+            </div>
+            <div class="leyenda-row">
+                <span class="leyenda-pill age-adulto">Adulto</span>
+                <span class="leyenda-rango">30 años &mdash; 59 años, 11 meses y 29 días</span>
+            </div>
+            <div class="leyenda-row">
+                <span class="leyenda-pill age-mayor">Ad. Mayor</span>
+                <span class="leyenda-rango">60 años a más</span>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Modal -->
 <div id="editarModal" class="modal">
@@ -275,6 +598,9 @@
             <label for="fecha_nacimiento">Fecha de Nacimiento</label>
             <input id="fecha_nacimiento" name="fecha_nacimiento" type="date">
 
+            <label for="celular">Celular</label>
+            <input id="celular" name="celular" type="text" placeholder="Ej: 945770325">
+
             <button type="submit">Guardar Cambios</button>
         </form>
     </div>
@@ -283,46 +609,76 @@
 
 <script>
 
-$(document).ready(function() {
-    const table = $('#afiliadosTable').DataTable({
-        processing: true,
-        serverSide: true,
-        ajax: "{% url 'afiliados_data' %}",
-        columns: [
-            { data: 'dni' },
-            { data: 'apellido_paterno' },
-            { data: 'apellido_materno' },
-            { data: 'nombres' },
-            {
-                data: 'sexo',
-                render: function(data) {
-                    if (data === "Masculino") {
-                        return '<i class="fa-solid fa-person" style="color:#2196f3;" title="Masculino"></i>';
-                    } else if (data === "Femenino") {
-                        return '<i class="fa-solid fa-person-dress" style="color:#e91e63;" title="Femenino"></i>';
+    $(document).ready(function () {
+        const table = $('#afiliadosTable').DataTable({
+            processing: true,
+            serverSide: true,
+            autoWidth: false,
+            ajax: "{% url 'afiliados_data' %}",
+            columns: [
+                { data: 'dni', width: '80px' },
+                { data: 'apellido_paterno' },
+                { data: 'apellido_materno' },
+                { data: 'nombres' },
+                {
+                    data: 'sexo',
+                    width: '55px',
+                    render: function (data, type, row) {
+                        // Calcular clasificación etaria
+                        function clasificarEdad(fechaNac) {
+                            if (!fechaNac) return null;
+                            const hoy = new Date();
+                            const nac = new Date(fechaNac);
+                            if (isNaN(nac)) return null;
+                            let anios = hoy.getFullYear() - nac.getFullYear();
+                            let meses = hoy.getMonth() - nac.getMonth();
+                            let dias  = hoy.getDate()  - nac.getDate();
+                            if (dias < 0)  { meses--; }
+                            if (meses < 0) { anios--; meses += 12; }
+                            // Edad en meses totales para comparación precisa
+                            const totalMeses = anios * 12 + (meses < 0 ? meses + 12 : meses);
+                            if (anios < 12)  return { label: 'Niño',        cls: 'age-nino' };
+                            if (anios < 18)  return { label: 'Adolescente', cls: 'age-adolescente' };
+                            if (anios < 30)  return { label: 'Joven',       cls: 'age-joven' };
+                            if (anios < 60)  return { label: 'Adulto',      cls: 'age-adulto' };
+                            return             { label: 'Ad. Mayor',   cls: 'age-mayor' };
+                        }
+
+                        let iconHtml = '-';
+                        if (data === "Masculino") {
+                            iconHtml = '<div class="gender-icon male-icon" title="Masculino"><i class="fa-solid fa-mars"></i></div>';
+                        } else if (data === "Femenino") {
+                            iconHtml = '<div class="gender-icon female-icon" title="Femenino"><i class="fa-solid fa-venus"></i></div>';
+                        }
+
+                        const edad = clasificarEdad(row.fecha_nacimiento);
+                        const badgeHtml = edad
+                            ? `<span class="age-badge ${edad.cls}">${edad.label}</span>`
+                            : '';
+
+                        return `<div class="gender-age-cell">${iconHtml}${badgeHtml}</div>`;
                     }
-                    return '-';
-                }
-            },
-            { data: 'fecha_nacimiento' },
-{
-    data: 'servicios_cumplidos',
-    orderable: false,
-    searchable: false,
-    render: function(data, type, row) {
-        // Caso cuando no hay datos
-        if (!data || data === '-' || data === '' || data === '0' || data === 0) {
-            return '<span class="status-badge status-vacio" title="Sin servicios cumplidos">-</span>';
-        }
+                },
+                { data: 'fecha_nacimiento', width: '80px' },
+                { data: 'celular', width: '100px' },
+                {
+                    data: 'servicios_cumplidos',
+                    orderable: false,
+                    searchable: false,
+                    render: function (data, type, row) {
+                        // Caso cuando no hay datos
+                        if (!data || data === '-' || data === '' || data === '0' || data === 0) {
+                            return '<span class="status-badge status-vacio" title="Sin servicios cumplidos">-</span>';
+                        }
 
-        // Si es un array de objetos (nuevo formato con fecha)
-        if (Array.isArray(data)) {
-            if (data.length === 0) {
-                return '<span class="status-badge status-vacio" title="Sin servicios cumplidos">-</span>';
-            }
+                        // Si es un array de objetos (nuevo formato con fecha)
+                        if (Array.isArray(data)) {
+                            if (data.length === 0) {
+                                return '<span class="status-badge status-vacio" title="Sin servicios cumplidos">-</span>';
+                            }
 
-            const badges = data.map(item => {
-                return `
+                            const badges = data.map(item => {
+                                return `
                     <div class="servicio-badge-wrapper">
                         <span class="servicio-badge clickable-badge-cumplido"
                               title="Click para eliminar: ${item.nombre}"
@@ -330,100 +686,100 @@ $(document).ready(function() {
                               data-servicio="${item.nombre}">${item.nombre}</span>
                         <div class="servicio-date">${item.fecha}</div>
                     </div>`;
-            });
-            return `<div class="servicios-container">${badges.join('')}</div>`;
-        }
+                            });
+                            return `<div class="servicios-container">${badges.join('')}</div>`;
+                        }
 
-        // Fallback: Si es un string (formato antiguo)
-        if (typeof data === 'string') {
-            let servicios = data.split(',').map(s => s.trim()).filter(s => s !== '-' && s !== '');
-            if (servicios.length === 0) return '<span class="status-badge status-vacio">-</span>';
-            
-            const badges = servicios.map(servicio => {
-                return `<span class="servicio-badge clickable-badge-cumplido"
+                        // Fallback: Si es un string (formato antiguo)
+                        if (typeof data === 'string') {
+                            let servicios = data.split(',').map(s => s.trim()).filter(s => s !== '-' && s !== '');
+                            if (servicios.length === 0) return '<span class="status-badge status-vacio">-</span>';
+
+                            const badges = servicios.map(servicio => {
+                                return `<span class="servicio-badge clickable-badge-cumplido"
                          data-afiliado-id="${row.id}"
                          data-servicio="${servicio}">${servicio}</span>`;
-            });
-            return `<div class="servicios-container">${badges.join('')}</div>`;
-        }
+                            });
+                            return `<div class="servicios-container">${badges.join('')}</div>`;
+                        }
 
-        return `<span class="status-badge status-completado">${data}</span>`;
-    }
-},
-// En la columna de servicios_pendientes, modifica el render:
-{
-    data: 'servicios_pendientes',
-    orderable: false,
-    searchable: false,
-    render: function(data, type, row) {
-        // Caso cuando no hay datos o es "-" o vacío
-        if (!data || data === '-' || data === '' || data === '0' || data === 0) {
-            return '<span class="status-badge status-completado" title="Sin servicios pendientes">0</span>';
-        }
+                        return `<span class="status-badge status-completado">${data}</span>`;
+                    }
+                },
+                // En la columna de servicios_pendientes, modifica el render:
+                {
+                    data: 'servicios_pendientes',
+                    orderable: false,
+                    searchable: false,
+                    render: function (data, type, row) {
+                        // Caso cuando no hay datos o es "-" o vacío
+                        if (!data || data === '-' || data === '' || data === '0' || data === 0) {
+                            return '<span class="status-badge status-completado" title="Sin servicios pendientes">0</span>';
+                        }
 
-        // Si es un string que podría contener servicios (con o sin comas)
-        if (typeof data === 'string') {
-            let servicios = [];
+                        // Si es un string que podría contener servicios (con o sin comas)
+                        if (typeof data === 'string') {
+                            let servicios = [];
 
-            // Si contiene comas, separarlos
-            if (data.includes(',')) {
-                servicios = data.split(',').map(s => s.trim()).filter(s => s !== '-' && s !== '');
-            } else {
-                // Si es un solo servicio, crear array con ese elemento
-                servicios = [data.trim()];
-            }
+                            // Si contiene comas, separarlos
+                            if (data.includes(',')) {
+                                servicios = data.split(',').map(s => s.trim()).filter(s => s !== '-' && s !== '');
+                            } else {
+                                // Si es un solo servicio, crear array con ese elemento
+                                servicios = [data.trim()];
+                            }
 
-            // Si después de filtrar no hay servicios
-            if (servicios.length === 0) {
-                return '<span class="status-badge status-completado" title="Sin servicios pendientes">0</span>';
-            }
+                            // Si después de filtrar no hay servicios
+                            if (servicios.length === 0) {
+                                return '<span class="status-badge status-completado" title="Sin servicios pendientes">0</span>';
+                            }
 
-            // Si solo hay un servicio, mostrar el badge individual
-            if (servicios.length === 1) {
-                const servicio = servicios[0];
-                return `<span class="servicio-badge badge-pendiente clickable-badge-pendiente"
+                            // Si solo hay un servicio, mostrar el badge individual
+                            if (servicios.length === 1) {
+                                const servicio = servicios[0];
+                                return `<span class="servicio-badge badge-pendiente clickable-badge-pendiente"
                          title="Click para marcar como cumplido: ${servicio}"
                          data-afiliado-id="${row.id}"
                          data-servicio="${servicio}">${servicio}</span>`;
-            }
+                            }
 
-            // Si hay múltiples servicios
-            const badges = servicios.map(servicio => {
-                return `<span class="servicio-badge badge-pendiente clickable-badge-pendiente"
+                            // Si hay múltiples servicios
+                            const badges = servicios.map(servicio => {
+                                return `<span class="servicio-badge badge-pendiente clickable-badge-pendiente"
                          title="Click para marcar como cumplido: ${servicio}"
                          data-afiliado-id="${row.id}"
                          data-servicio="${servicio}">${servicio}</span>`;
-            });
-            return `<div class="servicios-container">${badges.join('')}</div>`;
-        }
+                            });
+                            return `<div class="servicios-container">${badges.join('')}</div>`;
+                        }
 
-        // Si es solo un número (backup por si acaso)
-        return `<span class="status-badge status-pendiente">${data}</span>`;
-    }
-},
-{
-                data: null,
-                orderable: false,
-                searchable: false,
-                render: function(data, type, row) {
-                    return `
+                        // Si es solo un número (backup por si acaso)
+                        return `<span class="status-badge status-pendiente">${data}</span>`;
+                    }
+                },
+                {
+                    data: null,
+                    orderable: false,
+                    searchable: false,
+                    render: function (data, type, row) {
+                        return `
                         <div class="observaciones-container">
-                            <div>
-                                <label class="observacion-label">Enfermería</label>
+                            <div class="obs-group">
+                                <label class="observacion-label"><i class="fas fa-user-nurse"></i> Enfermería</label>
                                 <input type="text" class="observacion-input"
                                        data-afiliado-id="${row.id}"
                                        data-campo="observacion_enfermeria"
                                        value="${row.observacion_enfermeria || ''}">
                             </div>
-                            <div>
-                                <label class="observacion-label">Odontología</label>
+                            <div class="obs-group">
+                                <label class="observacion-label"><i class="fas fa-tooth"></i> Odontología</label>
                                 <input type="text" class="observacion-input"
                                        data-afiliado-id="${row.id}"
                                        data-campo="observacion_odontologia"
                                        value="${row.observacion_odontologia || ''}">
                             </div>
-                            <div>
-                                <label class="observacion-label">Obstetricia</label>
+                            <div class="obs-group">
+                                <label class="observacion-label"><i class="fas fa-baby"></i> Obstetricia</label>
                                 <input type="text" class="observacion-input"
                                        data-afiliado-id="${row.id}"
                                        data-campo="observacion_obstetricia"
@@ -431,175 +787,189 @@ $(document).ready(function() {
                             </div>
                         </div>
                     `;
-                }
-            },
-            {
-                data: null, orderable: false, searchable: false,
-                render: function(data, type, row) {
-                    // mandamos row entero para cargarlo en el modal
-                    return `<button class="btn-editar" data-json='${JSON.stringify(row)}' title="Editar">
+                    }
+                },
+                {
+                    data: null, orderable: false, searchable: false,
+                    render: function (data, type, row) {
+                        // mandamos row entero para cargarlo en el modal
+                        return `<button class="btn-editar" data-json='${JSON.stringify(row)}' title="Editar">
                                 <i class="fas fa-pencil-alt"></i>
                             </button>`;
+                    }
                 }
-            }
-        ],
-        pageLength: 50
-    });
-// Manejar cambios en los inputs de observaciones
-    $(document).on('change', '.observacion-input', function() {
-        const afiliadoId = $(this).data('afiliado-id');
-        const campo = $(this).data('campo');
-        const valor = $(this).val();
-        const afiliadoNombre = $(this).closest('tr').find('td:eq(3)').text();
+            ],
+            pageLength: 50
+        });
+        // Manejar cambios en los inputs de observaciones
+        $(document).on('change', '.observacion-input', function () {
+            const afiliadoId = $(this).data('afiliado-id');
+            const campo = $(this).data('campo');
+            const valor = $(this).val();
+            const afiliadoNombre = $(this).closest('tr').find('td:eq(3)').text();
 
-        guardarObservacion(afiliadoId, campo, valor, afiliadoNombre);
-    });
-
-    // Función para guardar observaciones con AJAX
-    async function guardarObservacion(afiliadoId, campo, valor, afiliadoNombre) {
-        Swal.fire({
-            title: 'Guardando...',
-            text: 'Por favor espere',
-            allowOutsideClick: false,
-            didOpen: () => { Swal.showLoading(); },
-            background: '#f8fafc',
-            color: '#1f2937',
-            timer: 1000, // Mostrar loader por 1 segundo
-            timerProgressBar: true
+            guardarObservacion(afiliadoId, campo, valor, afiliadoNombre);
         });
 
-        try {
-            const response = await fetch(`/afiliados/${afiliadoId}/guardar-observacion/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({
-                    campo: campo,
-                    valor: valor
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                Swal.fire({
-                    icon: 'success',
-                    title: '¡Guardado!',
-                    text: `Observación de ${campo.replace('observacion_', '')} para ${afiliadoNombre} actualizada`,
-                    timer: 1500,
-                    showConfirmButton: false,
-                    background: '#f8fafc',
-                    color: '#1f2937'
-                });
-                // No recargamos la tabla para no perder el foco, los datos ya están actualizados
-            } else {
-                throw new Error(data.message || 'Error al guardar la observación');
+        // Función para guardar observaciones con AJAX
+        // Leyenda etaria: abrir modal al hacer click en etiqueta
+        $(document).on('click', '.age-badge', function () {
+            $('#leyendaEdadModal').fadeIn(200);
+        });
+        $('#closeLeyenda').on('click', function () {
+            $('#leyendaEdadModal').fadeOut(200);
+        });
+        $(document).on('click', '#leyendaEdadModal', function (e) {
+            if ($(e.target).is('#leyendaEdadModal')) {
+                $('#leyendaEdadModal').fadeOut(200);
             }
-        } catch (error) {
+        });
+
+        async function guardarObservacion(afiliadoId, campo, valor, afiliadoNombre) {
             Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: error.message,
-                confirmButtonColor: '#ef4444',
+                title: 'Guardando...',
+                text: 'Por favor espere',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); },
                 background: '#f8fafc',
-                color: '#1f2937'
+                color: '#1f2937',
+                timer: 1000, // Mostrar loader por 1 segundo
+                timerProgressBar: true
             });
-        }
-    }
 
-    // Abrir modal con los datos del afiliado (desde row)
-       // Abrir modal con datos
-    $('#afiliadosTable').on('click', '.btn-editar', function() {
-        const rowData = $(this).data('json');
+            try {
+                const response = await fetch(`/afiliados/${afiliadoId}/guardar-observacion/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        campo: campo,
+                        valor: valor
+                    })
+                });
 
-        $('#afiliado_id').val(rowData.id);
-        $('#dni').val(rowData.dni);
-        $('#apellido_paterno').val(rowData.apellido_paterno);
-        $('#apellido_materno').val(rowData.apellido_materno);
-        $('#nombres').val(rowData.nombres);
-        $('#sexo').val(rowData.sexo_val);  // <-- directo de backend
-        $('#fecha_nacimiento').val(rowData.fecha_nacimiento || "");
+                const data = await response.json();
 
-        $('#editarModal').fadeIn();
-    });
-
-    // cerrar modal
-    $('.close-modal').on('click', function() {
-        $('#editarModal').fadeOut();
-    });
-    $(window).on('click', function(e) {
-        if ($(e.target).is('#editarModal')) {
-            $('#editarModal').fadeOut();
-        }
-    });
-
-    // Guardar cambios con AJAX + SweetAlert
-    $('#formEditarAfiliado').on('submit', function(e) {
-        e.preventDefault();
-
-        Swal.fire({
-            title: 'Guardando...',
-            text: 'Por favor espere',
-            allowOutsideClick: false,
-            didOpen: () => { Swal.showLoading(); }
-        });
-
-        $.ajax({
-            url: "{% url 'editar_afiliado' 0 %}".replace("0", $('#afiliado_id').val()),
-            type: 'POST',
-            data: $(this).serialize(),
-            headers: {'X-CSRFToken': '{{ csrf_token }}'},
-            success: function(data) {
                 if (data.success) {
                     Swal.fire({
                         icon: 'success',
-                        title: '¡Actualizado!',
-                        text: 'El afiliado fue actualizado correctamente',
-                        timer: 2000,
-                        showConfirmButton: false
+                        title: '¡Guardado!',
+                        text: `Observación de ${campo.replace('observacion_', '')} para ${afiliadoNombre} actualizada`,
+                        timer: 1500,
+                        showConfirmButton: false,
+                        background: '#f8fafc',
+                        color: '#1f2937'
                     });
-                    $('#editarModal').fadeOut();
-                    $('#afiliadosTable').DataTable().ajax.reload(null, false);
+                    // No recargamos la tabla para no perder el foco, los datos ya están actualizados
                 } else {
-                    Swal.fire({ icon: 'error', title: 'Error', text: data.message });
+                    throw new Error(data.message || 'Error al guardar la observación');
                 }
-            },
-            error: function(xhr) {
+            } catch (error) {
                 Swal.fire({
                     icon: 'error',
-                    title: 'Error del servidor',
-                    text: xhr.responseJSON?.message || xhr.statusText
+                    title: 'Error',
+                    text: error.message,
+                    confirmButtonColor: '#ef4444',
+                    background: '#f8fafc',
+                    color: '#1f2937'
                 });
             }
+        }
+
+        // Abrir modal con los datos del afiliado (desde row)
+        // Abrir modal con datos
+        $('#afiliadosTable').on('click', '.btn-editar', function () {
+            const rowData = $(this).data('json');
+
+            $('#afiliado_id').val(rowData.id);
+            $('#dni').val(rowData.dni);
+            $('#apellido_paterno').val(rowData.apellido_paterno);
+            $('#apellido_materno').val(rowData.apellido_materno);
+            $('#nombres').val(rowData.nombres);
+            $('#sexo').val(rowData.sexo_val);  // <-- directo de backend
+            $('#fecha_nacimiento').val(rowData.fecha_nacimiento || "");
+            $('#celular').val(rowData.celular !== "-" ? rowData.celular : "");
+
+            $('#editarModal').fadeIn();
         });
-    });
 
-// Manejar click en badges de servicios pendientes (marcar como cumplido)
-$(document).on('click', '.clickable-badge-pendiente', function() {
-    const afiliadoId = $(this).data('afiliado-id');
-    const servicio = $(this).data('servicio');
-    const afiliadoNombre = $(this).closest('tr').find('td:eq(3)').text();
+        // cerrar modal
+        $('.close-modal').on('click', function () {
+            $('#editarModal').fadeOut();
+        });
+        $(window).on('click', function (e) {
+            if ($(e.target).is('#editarModal')) {
+                $('#editarModal').fadeOut();
+            }
+        });
 
-    marcarServicioCumplido(afiliadoId, servicio, afiliadoNombre);
-});
+        // Guardar cambios con AJAX + SweetAlert
+        $('#formEditarAfiliado').on('submit', function (e) {
+            e.preventDefault();
 
-// Manejar click en badges de servicios cumplidos (eliminar)
-$(document).on('click', '.clickable-badge-cumplido', function() {
-    const afiliadoId = $(this).data('afiliado-id');
-    const servicio = $(this).data('servicio');
-    const afiliadoNombre = $(this).closest('tr').find('td:eq(3)').text();
+            Swal.fire({
+                title: 'Guardando...',
+                text: 'Por favor espere',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
 
-    eliminarServicioCumplido(afiliadoId, servicio, afiliadoNombre);
-});
+            $.ajax({
+                url: "{% url 'editar_afiliado' 0 %}".replace("0", $('#afiliado_id').val()),
+                type: 'POST',
+                data: $(this).serialize(),
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                success: function (data) {
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Actualizado!',
+                            text: 'El afiliado fue actualizado correctamente',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                        $('#editarModal').fadeOut();
+                        $('#afiliadosTable').DataTable().ajax.reload(null, false);
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Error', text: data.message });
+                    }
+                },
+                error: function (xhr) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error del servidor',
+                        text: xhr.responseJSON?.message || xhr.statusText
+                    });
+                }
+            });
+        });
 
-// Función para mostrar SweetAlert y marcar servicio como cumplido
-async function marcarServicioCumplido(afiliadoId, servicio, afiliadoNombre) {
-    // SweetAlert con input de observaciones
-    const { value: formValues, isConfirmed } = await Swal.fire({
-        title: `Marcar servicio como cumplido`,
-        html: `
+        // Manejar click en badges de servicios pendientes (marcar como cumplido)
+        $(document).on('click', '.clickable-badge-pendiente', function () {
+            const afiliadoId = $(this).data('afiliado-id');
+            const servicio = $(this).data('servicio');
+            const afiliadoNombre = $(this).closest('tr').find('td:eq(3)').text();
+
+            marcarServicioCumplido(afiliadoId, servicio, afiliadoNombre);
+        });
+
+        // Manejar click en badges de servicios cumplidos (eliminar)
+        $(document).on('click', '.clickable-badge-cumplido', function () {
+            const afiliadoId = $(this).data('afiliado-id');
+            const servicio = $(this).data('servicio');
+            const afiliadoNombre = $(this).closest('tr').find('td:eq(3)').text();
+
+            eliminarServicioCumplido(afiliadoId, servicio, afiliadoNombre);
+        });
+
+        // Función para mostrar SweetAlert y marcar servicio como cumplido
+        async function marcarServicioCumplido(afiliadoId, servicio, afiliadoNombre) {
+            // SweetAlert con input de observaciones
+            const { value: formValues, isConfirmed } = await Swal.fire({
+                title: `Marcar servicio como cumplido`,
+                html: `
             <div class="text-left">
                 <p><strong>Afiliado:</strong> ${afiliadoNombre}</p>
                 <p><strong>Servicio:</strong> ${servicio}</p>
@@ -607,83 +977,83 @@ async function marcarServicioCumplido(afiliadoId, servicio, afiliadoNombre) {
                 <textarea id="observaciones" class="swal2-textarea" placeholder="Ingrese observaciones sobre la atención..." rows="4"></textarea>
             </div>
         `,
-        focusConfirm: false,
-        showCancelButton: true,
-        confirmButtonText: 'Marcar como Cumplido',
-        cancelButtonText: 'Cancelar',
-        confirmButtonColor: '#10b981',
-        cancelButtonColor: '#6b7280',
-        background: '#f8fafc',
-        color: '#1f2937',
-        preConfirm: () => {
-            return {
-                observaciones: document.getElementById('observaciones').value
-            }
-        }
-    });
-
-    if (!isConfirmed) return;
-
-    // Mostrar loader
-    Swal.fire({
-        title: 'Procesando...',
-        text: 'Marcando servicio como cumplido',
-        allowOutsideClick: false,
-        didOpen: () => {
-            Swal.showLoading();
-        },
-        background: '#f8fafc',
-        color: '#1f2937'
-    });
-
-    try {
-        const response = await fetch(`/afiliados/${afiliadoId}/marcar-servicio/`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": "{{ csrf_token }}"
-            },
-            body: JSON.stringify({
-                servicio: servicio,
-                observaciones: formValues.observaciones
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            Swal.fire({
-                icon: 'success',
-                title: '¡Servicio cumplido!',
-                text: data.message,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: 'Marcar como Cumplido',
+                cancelButtonText: 'Cancelar',
                 confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6b7280',
+                background: '#f8fafc',
+                color: '#1f2937',
+                preConfirm: () => {
+                    return {
+                        observaciones: document.getElementById('observaciones').value
+                    }
+                }
+            });
+
+            if (!isConfirmed) return;
+
+            // Mostrar loader
+            Swal.fire({
+                title: 'Procesando...',
+                text: 'Marcando servicio como cumplido',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
                 background: '#f8fafc',
                 color: '#1f2937'
             });
 
-            // Recargar la tabla para actualizar los badges
-            $('#afiliadosTable').DataTable().ajax.reload(null, false);
-        } else {
-            throw new Error(data.message || 'Error al marcar el servicio');
-        }
-    } catch (error) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.message,
-            confirmButtonColor: '#ef4444',
-            background: '#f8fafc',
-            color: '#1f2937'
-        });
-    }
-}
+            try {
+                const response = await fetch(`/afiliados/${afiliadoId}/marcar-servicio/`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": "{{ csrf_token }}"
+                    },
+                    body: JSON.stringify({
+                        servicio: servicio,
+                        observaciones: formValues.observaciones
+                    })
+                });
 
-// Función para mostrar SweetAlert y eliminar servicio cumplido
-async function eliminarServicioCumplido(afiliadoId, servicio, afiliadoNombre) {
-    // SweetAlert de confirmación para eliminar
-    const { isConfirmed } = await Swal.fire({
-        title: `Eliminar servicio cumplido`,
-        html: `
+                const data = await response.json();
+
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Servicio cumplido!',
+                        text: data.message,
+                        confirmButtonColor: '#10b981',
+                        background: '#f8fafc',
+                        color: '#1f2937'
+                    });
+
+                    // Recargar la tabla para actualizar los badges
+                    $('#afiliadosTable').DataTable().ajax.reload(null, false);
+                } else {
+                    throw new Error(data.message || 'Error al marcar el servicio');
+                }
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message,
+                    confirmButtonColor: '#ef4444',
+                    background: '#f8fafc',
+                    color: '#1f2937'
+                });
+            }
+        }
+
+        // Función para mostrar SweetAlert y eliminar servicio cumplido
+        async function eliminarServicioCumplido(afiliadoId, servicio, afiliadoNombre) {
+            // SweetAlert de confirmación para eliminar
+            const { isConfirmed } = await Swal.fire({
+                title: `Eliminar servicio cumplido`,
+                html: `
             <div class="text-left">
                 <p><strong>Afiliado:</strong> ${afiliadoNombre}</p>
                 <p><strong>Servicio:</strong> ${servicio}</p>
@@ -696,72 +1066,72 @@ async function eliminarServicioCumplido(afiliadoId, servicio, afiliadoNombre) {
                 </p>
             </div>
         `,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Sí, eliminar',
-        cancelButtonText: 'Cancelar',
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#6b7280',
-        background: '#f8fafc',
-        color: '#1f2937'
-    });
-
-    if (!isConfirmed) return;
-
-    // Mostrar loader
-    Swal.fire({
-        title: 'Procesando...',
-        text: 'Eliminando servicio cumplido',
-        allowOutsideClick: false,
-        didOpen: () => {
-            Swal.showLoading();
-        },
-        background: '#f8fafc',
-        color: '#1f2937'
-    });
-
-    try {
-        const response = await fetch(`/afiliados/${afiliadoId}/eliminar-servicio/`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": "{{ csrf_token }}"
-            },
-            body: JSON.stringify({
-                servicio: servicio
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            Swal.fire({
-                icon: 'success',
-                title: '¡Servicio eliminado!',
-                text: data.message,
-                confirmButtonColor: '#10b981',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
                 background: '#f8fafc',
                 color: '#1f2937'
             });
 
-            // Recargar la tabla para actualizar los badges
-            $('#afiliadosTable').DataTable().ajax.reload(null, false);
-        } else {
-            throw new Error(data.message || 'Error al eliminar el servicio');
-        }
-    } catch (error) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.message,
-            confirmButtonColor: '#ef4444',
-            background: '#f8fafc',
-            color: '#1f2937'
-        });
-    }
-}
+            if (!isConfirmed) return;
 
-});
+            // Mostrar loader
+            Swal.fire({
+                title: 'Procesando...',
+                text: 'Eliminando servicio cumplido',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
+                background: '#f8fafc',
+                color: '#1f2937'
+            });
+
+            try {
+                const response = await fetch(`/afiliados/${afiliadoId}/eliminar-servicio/`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": "{{ csrf_token }}"
+                    },
+                    body: JSON.stringify({
+                        servicio: servicio
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Servicio eliminado!',
+                        text: data.message,
+                        confirmButtonColor: '#10b981',
+                        background: '#f8fafc',
+                        color: '#1f2937'
+                    });
+
+                    // Recargar la tabla para actualizar los badges
+                    $('#afiliadosTable').DataTable().ajax.reload(null, false);
+                } else {
+                    throw new Error(data.message || 'Error al eliminar el servicio');
+                }
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message,
+                    confirmButtonColor: '#ef4444',
+                    background: '#f8fafc',
+                    color: '#1f2937'
+                });
+            }
+        }
+
+    });
 </script>
 
 {% endblock %}

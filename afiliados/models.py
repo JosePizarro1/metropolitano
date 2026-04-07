@@ -18,6 +18,7 @@ class Afiliado(models.Model):
     nombres = models.CharField(max_length=150, db_index=True, null=True, blank=True)
     fecha_nacimiento = models.DateField(blank=True, null=True)
     sexo = models.CharField(max_length=1, choices=SEXO_CHOICES, blank=True, null=True)
+    celular = models.CharField(max_length=20, blank=True, null=True)
 
     # Nuevos campos de observaciones: nullables en DB, blank en forms, default vacío
     observacion_enfermeria = models.TextField(blank=True, null=True, default="")

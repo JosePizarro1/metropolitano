@@ -18,6 +18,7 @@ urlpatterns = [
     path("atenciones/", atenciones_view, name="atenciones"),
     path("atenciones/list/<int:afiliado_id>/", atenciones_list, name="atenciones_list"),
     path("afiliados/search/", afiliados_search, name="afiliados_search"),
+    path("afiliado/<int:afiliado_id>/info/", get_afiliado_info, name="get_afiliado_info"),
     path('atenciones/data/', atenciones_data, name='atenciones_data'),
     path("atenciones/create/", atenciones_create, name="atenciones_create"),
     path("admin-panel/", admin_panel, name="admin_panel"),

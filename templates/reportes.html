@@ -208,28 +208,108 @@
         </div>
     </div>
 
-    <!-- Información del Reporte -->
-    <div class="bg-white rounded-2xl shadow-lg p-6 mt-6">
-        <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
-            <i class="fas fa-info-circle mr-3 text-blue-500"></i>
-            Acerca de este Reporte
-        </h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
-            <div>
-                <p class="mb-2"><strong>📊 Qué muestra:</strong></p>
-                <ul class="list-disc list-inside space-y-1">
-                    <li>Pacientes atendidos en el mes actual</li>
-                    <li>Estado de cumplimiento de cada servicio</li>
-                    <li>Afiliados con atenciones completas</li>
-                </ul>
+    <!-- REPORTES ADICIONALES -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        
+        <!-- REPORTE 1: FALTAN RECIBIR LA ATENCIÓN POR ETAPA DE VIDA -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 border-t-4 border-red-500 hover:shadow-xl transition-shadow duration-300">
+            <h3 class="text-lg font-bold text-gray-800 mb-5 flex items-center">
+                <div class="bg-red-100 rounded-lg p-2 mr-3">
+                    <i class="fas fa-user-clock text-red-500"></i>
+                </div>
+                Faltan Recibir la Atención
+                <span class="ml-2 text-xs font-normal text-gray-500 px-2 py-1 bg-gray-100 rounded-full">Por etapa de vida</span>
+            </h3>
+            
+            <div class="space-y-4">
+                <!-- Etapa de Vida: Niño -->
+                <div class="group">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm font-medium text-gray-600 flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-blue-400 mr-2"></span>Niño</span>
+                        <span class="text-sm font-bold text-gray-800 group-hover:text-blue-500 transition-colors">{{ faltan_nino|default:"0" }}</span>
+                    </div>
+                </div>
+                
+                <!-- Etapa de Vida: Adolescente -->
+                <div class="group">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm font-medium text-gray-600 flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-purple-400 mr-2"></span>Adolescente</span>
+                        <span class="text-sm font-bold text-gray-800 group-hover:text-purple-500 transition-colors">{{ faltan_adolescente|default:"0" }}</span>
+                    </div>
+                </div>
+                
+                <!-- Etapa de Vida: Joven -->
+                <div class="group">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm font-medium text-gray-600 flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-green-400 mr-2"></span>Joven</span>
+                        <span class="text-sm font-bold text-gray-800 group-hover:text-green-500 transition-colors">{{ faltan_joven|default:"0" }}</span>
+                    </div>
+                </div>
+                
+                <!-- Etapa de Vida: Adulto -->
+                <div class="group">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm font-medium text-gray-600 flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-yellow-400 mr-2"></span>Adulto</span>
+                        <span class="text-sm font-bold text-gray-800 group-hover:text-yellow-500 transition-colors">{{ faltan_adulto|default:"0" }}</span>
+                    </div>
+                </div>
+                
+                <!-- Etapa de Vida: Adulto Mayor -->
+                <div class="group">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm font-medium text-gray-600 flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-red-400 mr-2"></span>Adulto Mayor</span>
+                        <span class="text-sm font-bold text-gray-800 group-hover:text-red-500 transition-colors">{{ faltan_mayor|default:"0" }}</span>
+                    </div>
+                </div>
             </div>
-            <div>
-                <p class="mb-2"><strong>📅 Periodo:</strong></p>
-                <ul class="list-disc list-inside space-y-1">
-                    <li>Mes: {{ mes_actual }}</li>
-                    <li>Desde: {{ fecha_inicio_mes|date:"d/m/Y" }}</li>
-                    <li>Hasta: {{ fecha_fin_mes|date:"d/m/Y" }}</li>
-                </ul>
+        </div>
+    
+        <!-- REPORTE 2: COMPLETARON LA ATENCIÓN -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 border-t-4 border-green-500 hover:shadow-xl transition-shadow duration-300 flex flex-col">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                <div class="bg-green-100 rounded-lg p-2 mr-3">
+                    <i class="fas fa-check-circle text-green-500"></i>
+                </div>
+                Completaron la Atención
+            </h3>
+            
+            <div class="flex-grow flex flex-col items-center justify-center text-center p-4 relative">
+                <div class="relative w-36 h-36 mb-6 drop-shadow-md">
+                    <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                        <!-- Background Circle -->
+                        <path
+                            class="text-gray-100"
+                            stroke-dasharray="100, 100"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none" stroke="currentColor" stroke-width="3"
+                        />
+                        <!-- Progress Circle -->
+                        <path
+                            class="text-green-500 transition-all duration-1000 ease-out"
+                            {% if pacientes_atendidos_mes > 0 %}
+                            stroke-dasharray="{% widthratio total_completos pacientes_atendidos_mes 100 %}, 100"
+                            {% else %}
+                            stroke-dasharray="0, 100"
+                            {% endif %}
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none" stroke="currentColor" stroke-width="3"
+                            stroke-linecap="round"
+                        />
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                        <span class="text-3xl font-extrabold text-gray-800">{{ total_completos }}</span>
+                        {% if pacientes_atendidos_mes > 0 %}
+                        <span class="text-xs text-gray-500 font-medium mt-1">{% widthratio total_completos pacientes_atendidos_mes 100 %}%</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 px-5 py-3 rounded-xl border border-green-100 w-full">
+                    <p class="text-gray-700 font-medium flex items-center justify-center">
+                        <i class="fas fa-users text-emerald-500 mr-2 text-lg"></i>
+                        <span class="text-emerald-700 font-bold text-lg mr-1">{{ total_completos }}</span> pacientes al día
+                    </p>
+                </div>
             </div>
         </div>
     </div>

@@ -256,6 +256,14 @@ def reportes_view(request):
 
     # 4. Datos para la tabla: afiliados atendidos este mes con estado de cada servicio
     afiliados_con_estado = []
+    
+    # Contadores para pacientes con atenciones pendientes por etapa de vida
+    faltan_nino = 0
+    faltan_adolescente = 0
+    faltan_joven = 0
+    faltan_adulto = 0
+    faltan_mayor = 0
+
     for afiliado in afiliados_atendidos_mes:
         servicios_atendidos = set(afiliado.servicios_del_anio(año_actual))
         servicios_pendientes = set(todos_servicios) - servicios_atendidos
@@ -268,12 +276,31 @@ def reportes_view(request):
                 'cumplido': servicio in servicios_atendidos
             })
 
+        completo = len(servicios_pendientes) == 0
+
+        # Clasificación de edad si le faltan atenciones (y tiene fecha de nacimiento)
+        if not completo and afiliado.fecha_nacimiento:
+            nac = afiliado.fecha_nacimiento
+            # Calcular edad precisa considerando meses y días
+            anios = hoy.year - nac.year - ((hoy.month, hoy.day) < (nac.month, nac.day))
+            
+            if anios < 12:
+                faltan_nino += 1
+            elif anios < 18:
+                faltan_adolescente += 1
+            elif anios < 30:
+                faltan_joven += 1
+            elif anios < 60:
+                faltan_adulto += 1
+            else:
+                faltan_mayor += 1
+
         afiliados_con_estado.append({
             'afiliado': afiliado,
             'servicios_estado': servicios_estado,
             'total_atendidos': len(servicios_atendidos),
             'total_pendientes': len(servicios_pendientes),
-            'completo': len(servicios_pendientes) == 0
+            'completo': completo
         })
 
     context = {
@@ -284,6 +311,11 @@ def reportes_view(request):
         'mes_actual': fecha_inicio_mes.strftime("%B %Y"),
         'fecha_inicio_mes': fecha_inicio_mes,
         'fecha_fin_mes': fecha_fin_mes,
+        'faltan_nino': faltan_nino,
+        'faltan_adolescente': faltan_adolescente,
+        'faltan_joven': faltan_joven,
+        'faltan_adulto': faltan_adulto,
+        'faltan_mayor': faltan_mayor,
     }
 
     return render(request, 'reportes.html', context)
@@ -619,6 +651,7 @@ def afiliados_data(request):
             'nombre_completo': f"{a.apellido_paterno or ''} {a.apellido_materno or ''}, {a.nombres or ''}".strip(),
             'sexo': a.get_sexo_display() if a.sexo else "",
             'sexo_val': a.sexo or "",  # para que JS sepa si es "M" o "F"
+            'celular': a.celular or "-",
             'servicios_cumplidos': servicios_cumplidos,
             'servicios_pendientes': servicios_pendientes,
             'observacion_enfermeria': a.observacion_enfermeria or "",
@@ -644,6 +677,7 @@ def editar_afiliado(request, afiliado_id):
         afiliado.apellido_materno = request.POST.get("apellido_materno") or None
         afiliado.nombres = request.POST.get("nombres") or None
         afiliado.sexo = request.POST.get("sexo") or None
+        afiliado.celular = request.POST.get("celular") or None
 
         fecha = request.POST.get("fecha_nacimiento")
         if fecha:
@@ -706,6 +740,20 @@ def afiliados_search(request):
             "nombre": nombre
         })
     return JsonResponse(results, safe=False)
+@login_required
+def get_afiliado_info(request, afiliado_id):
+    afiliado = get_object_or_404(Afiliado, id=afiliado_id)
+    return JsonResponse({
+        'success': True,
+        'afiliado': {
+            'id': afiliado.id,
+            'dni': afiliado.dni or "-",
+            'nombre_completo': f"{afiliado.apellido_paterno or ''} {afiliado.apellido_materno or ''}, {afiliado.nombres or ''}".strip(),
+            'sexo': afiliado.get_sexo_display() if afiliado.sexo else "-",
+            'fecha_nacimiento': afiliado.fecha_nacimiento.strftime("%d/%m/%Y") if afiliado.fecha_nacimiento else "-",
+            'celular': afiliado.celular or "-"
+        }
+    })
 
 # -----------------------------
 # LISTA DE ATENCIONES POR AFILIADO
