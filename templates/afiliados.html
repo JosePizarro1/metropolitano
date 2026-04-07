@@ -603,6 +603,7 @@
 
             <label for="fecha_nacimiento">Fecha de Nacimiento</label>
             <input id="fecha_nacimiento" name="fecha_nacimiento" type="date">
+            <div id="edad_calc_editar" style="font-size: 0.75rem; color: #6366f1; margin-top: 4px; font-weight: 600; min-height: 16px;"></div>
 
             <label for="celular">Celular</label>
             <input id="celular" name="celular" type="text" placeholder="Ej: 945770325">
@@ -640,6 +641,7 @@
 
             <label style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.025em;" for="nuevo_fecha_nacimiento">Fecha de Nacimiento</label>
             <input style="width:100%;padding:12px 16px;border-radius:12px;border:1px solid var(--border-color);background:#f8fafc;font-size:0.95rem;" id="nuevo_fecha_nacimiento" name="fecha_nacimiento" type="date" required>
+            <div id="edad_calc_nuevo" style="font-size: 0.75rem; color: #10b981; margin-top: 4px; font-weight: 600; min-height: 16px;"></div>
 
             <label style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.025em;" for="nuevo_celular">Celular</label>
             <input style="width:100%;padding:12px 16px;border-radius:12px;border:1px solid var(--border-color);background:#f8fafc;font-size:0.95rem;" id="nuevo_celular" name="celular" type="text" placeholder="Ej: 945770325">
@@ -702,7 +704,54 @@
                         return `<div class="gender-age-cell">${iconHtml}${badgeHtml}</div>`;
                     }
                 },
-                { data: 'fecha_nacimiento', width: '80px' },
+                { 
+                    data: 'fecha_nacimiento', 
+                    width: '90px',
+                    render: function (data) {
+                        if (!data || data === '-') return '-';
+                        
+                        // Formatear la fecha a DD/MM/YYYY
+                        const partes = data.split('-');
+                        let displayDate = data;
+                        if (partes.length === 3) {
+                            displayDate = `${partes[2]}/${partes[1]}/${partes[0]}`;
+                        } else {
+                            displayDate = data; // fallback
+                        }
+                        
+                        // Calcular edad cronológica compacta (Ej: 25a 3m 12d)
+                        const hoy = new Date();
+                        const nac = new Date(data + 'T00:00:00');
+                        if (isNaN(nac.getTime())) return displayDate;
+                        
+                        let a = hoy.getFullYear() - nac.getFullYear();
+                        let m = hoy.getMonth() - nac.getMonth();
+                        let d = hoy.getDate() - nac.getDate();
+                        
+                        if (d < 0) {
+                            m--;
+                            const ultimoMes = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+                            d += ultimoMes.getDate();
+                        }
+                        if (m < 0) {
+                            a--;
+                            m += 12;
+                        }
+                        
+                        let texto = [];
+                        if (a > 0) texto.push(`${a}a`);
+                        if (m > 0) texto.push(`${m}m`);
+                        if (d > 0) texto.push(`${d}d`);
+                        const edadCronologica = texto.length === 0 ? '0d' : texto.join(' ');
+
+                        return `
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                            <span style="font-weight: 500;">${displayDate}</span>
+                            <span style="font-size: 0.65rem; color: #64748b; font-weight: 600; margin-top: 2px; background: #f1f5f9; padding: 2px 6px; border-radius: 10px;">${edadCronologica}</span>
+                        </div>
+                        `;
+                    }
+                },
                 { data: 'celular', width: '100px' },
                 {
                     data: 'servicios_cumplidos',
@@ -935,6 +984,7 @@
             $('#fecha_nacimiento').val(rowData.fecha_nacimiento || "");
             $('#celular').val(rowData.celular !== "-" ? rowData.celular : "");
 
+            actualizarEdadCronologica('#fecha_nacimiento', '#edad_calc_editar'); // Calcular al abrir
             $('#editarModal').fadeIn();
         });
 
@@ -992,6 +1042,7 @@
         // ======================= LOGICA NUEVO AFILIADO ========================== //
         $('#btnNuevoAfiliado').on('click', function () {
             $('#formNuevoAfiliado')[0].reset();
+            $('#edad_calc_nuevo').text(''); // Limpiar texto de edad
             $('#nuevoModal').fadeIn();
         });
 
@@ -1003,6 +1054,49 @@
             if ($(e.target).is('#nuevoModal')) {
                 $('#nuevoModal').fadeOut();
             }
+        });
+
+        // ======================= CALCULO EDAD CRONOLOGICA ========================== //
+        function calcularEdadCronologica(fechaNacStr) {
+            if (!fechaNacStr) return '';
+            const hoy = new Date();
+            const nac = new Date(fechaNacStr + 'T00:00:00'); // Evita desfases de timezone
+            if (isNaN(nac.getTime())) return '';
+            
+            let a = hoy.getFullYear() - nac.getFullYear();
+            let m = hoy.getMonth() - nac.getMonth();
+            let d = hoy.getDate() - nac.getDate();
+            
+            if (d < 0) {
+                m--;
+                const ultimoMes = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+                d += ultimoMes.getDate();
+            }
+            if (m < 0) {
+                a--;
+                m += 12;
+            }
+            
+            let texto = [];
+            if (a > 0) texto.push(`${a} año${a!==1?'s':''}`);
+            if (m > 0) texto.push(`${m} mes${m!==1?'es':''}`);
+            if (d > 0) texto.push(`${d} día${d!==1?'s':''}`);
+            
+            if (texto.length === 0) return '0 días';
+            return 'Edad: ' + texto.join(', ');
+        }
+
+        function actualizarEdadCronologica(inputId, labelId) {
+            const fechaVal = $(inputId).val();
+            $(labelId).text(calcularEdadCronologica(fechaVal));
+        }
+
+        $('#fecha_nacimiento').on('input change', function() {
+            actualizarEdadCronologica('#fecha_nacimiento', '#edad_calc_editar');
+        });
+
+        $('#nuevo_fecha_nacimiento').on('input change', function() {
+            actualizarEdadCronologica('#nuevo_fecha_nacimiento', '#edad_calc_nuevo');
         });
 
         $('#formNuevoAfiliado').on('submit', function (e) {
