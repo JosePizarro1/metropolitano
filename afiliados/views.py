@@ -666,7 +666,40 @@ def afiliados_data(request):
         'data': data
     })
 
+@login_required
+@csrf_exempt
+def crear_afiliado(request):
+    if request.method == "POST":
+        try:
+            dni = request.POST.get("dni") or None
+            apellido_paterno = request.POST.get("apellido_paterno") or None
+            apellido_materno = request.POST.get("apellido_materno") or None
+            nombres = request.POST.get("nombres") or None
+            sexo = request.POST.get("sexo") or None
+            celular = request.POST.get("celular") or None
+            fecha_nacimiento = None
 
+            fecha_str = request.POST.get("fecha_nacimiento")
+            if fecha_str:
+                try:
+                    fecha_nacimiento = datetime.strptime(fecha_str, "%Y-%m-%d").date()
+                except Exception:
+                    pass
+
+            afiliado = Afiliado.objects.create(
+                dni=dni,
+                apellido_paterno=apellido_paterno,
+                apellido_materno=apellido_materno,
+                nombres=nombres,
+                sexo=sexo,
+                fecha_nacimiento=fecha_nacimiento,
+                celular=celular
+            )
+            return JsonResponse({"success": True, "message": "Afiliado creado correctamente", "id": afiliado.id})
+        except Exception as e:
+            return JsonResponse({"success": False, "message": str(e)})
+
+    return JsonResponse({"success": False, "message": "Método no permitido"}, status=405)
 def editar_afiliado(request, afiliado_id):
     afiliado = get_object_or_404(Afiliado, id=afiliado_id)
 

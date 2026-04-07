@@ -481,15 +481,16 @@
         transition: all 0.2s;
     }
 
-    #formEditarAfiliado input:focus,
-    #formEditarAfiliado select:focus {
+    #formEditarAfiliado input:focus, #formEditarAfiliado select:focus,
+    #formNuevoAfiliado input:focus, #formNuevoAfiliado select:focus {
         outline: none;
         border-color: var(--primary);
         background: white;
         box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
     }
 
-    #formEditarAfiliado button[type="submit"] {
+    #formEditarAfiliado button[type="submit"],
+    #formNuevoAfiliado button[type="submit"] {
         width: 100%;
         margin-top: 24px;
         padding: 14px;
@@ -504,14 +505,19 @@
         box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
     }
 
-    #formEditarAfiliado button[type="submit"]:hover {
+    #formEditarAfiliado button[type="submit"]:hover,
+    #formNuevoAfiliado button[type="submit"]:hover {
         transform: translateY(-2px);
         box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.4);
     }
 </style>
 
 <div id="afiliados-page-content">
-    <div class="page-header">
+    <div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 class="page-title">Directorio de Afiliados</h2>
+        <button id="btnNuevoAfiliado" style="padding: 10px 20px; background: var(--primary-gradient); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2); transition: transform 0.2s;">
+            <i class="fas fa-plus" style="margin-right: 5px;"></i> Nuevo Afiliado
+        </button>
     </div>
 
     <div class="table-card">
@@ -602,6 +608,43 @@
             <input id="celular" name="celular" type="text" placeholder="Ej: 945770325">
 
             <button type="submit">Guardar Cambios</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Nuevo Afiliado -->
+<div id="nuevoModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" id="closeNuevoModal">&times;</span>
+        <h3 style="margin-bottom:15px;color:#10b981;"><i class="fas fa-user-plus mr-2"></i> Nuevo Afiliado</h3>
+        <form id="formNuevoAfiliado">
+            <!-- Reuse similar styles but with different IDs -->
+            <label style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.025em;" for="nuevo_dni">DNI</label>
+            <input style="width:100%;padding:12px 16px;border-radius:12px;border:1px solid var(--border-color);background:#f8fafc;font-size:0.95rem;" id="nuevo_dni" name="dni" type="text" required>
+
+            <label style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.025em;" for="nuevo_apellido_paterno">Apellido Paterno</label>
+            <input style="width:100%;padding:12px 16px;border-radius:12px;border:1px solid var(--border-color);background:#f8fafc;font-size:0.95rem;" id="nuevo_apellido_paterno" name="apellido_paterno" type="text" required>
+
+            <label style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.025em;" for="nuevo_apellido_materno">Apellido Materno</label>
+            <input style="width:100%;padding:12px 16px;border-radius:12px;border:1px solid var(--border-color);background:#f8fafc;font-size:0.95rem;" id="nuevo_apellido_materno" name="apellido_materno" type="text" required>
+
+            <label style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.025em;" for="nuevo_nombres">Nombres</label>
+            <input style="width:100%;padding:12px 16px;border-radius:12px;border:1px solid var(--border-color);background:#f8fafc;font-size:0.95rem;" id="nuevo_nombres" name="nombres" type="text" required>
+
+            <label style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.025em;" for="nuevo_sexo">Sexo</label>
+            <select style="width:100%;padding:12px 16px;border-radius:12px;border:1px solid var(--border-color);background:#f8fafc;font-size:0.95rem;" id="nuevo_sexo" name="sexo" required>
+                <option value="">--</option>
+                <option value="M">Masculino</option>
+                <option value="F">Femenino</option>
+            </select>
+
+            <label style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.025em;" for="nuevo_fecha_nacimiento">Fecha de Nacimiento</label>
+            <input style="width:100%;padding:12px 16px;border-radius:12px;border:1px solid var(--border-color);background:#f8fafc;font-size:0.95rem;" id="nuevo_fecha_nacimiento" name="fecha_nacimiento" type="date" required>
+
+            <label style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.025em;" for="nuevo_celular">Celular</label>
+            <input style="width:100%;padding:12px 16px;border-radius:12px;border:1px solid var(--border-color);background:#f8fafc;font-size:0.95rem;" id="nuevo_celular" name="celular" type="text" placeholder="Ej: 945770325">
+
+            <button type="submit" style="background: var(--success-gradient);">Crear Afiliado</button>
         </form>
     </div>
 </div>
@@ -931,6 +974,62 @@
                             showConfirmButton: false
                         });
                         $('#editarModal').fadeOut();
+                        $('#afiliadosTable').DataTable().ajax.reload(null, false);
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Error', text: data.message });
+                    }
+                },
+                error: function (xhr) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error del servidor',
+                        text: xhr.responseJSON?.message || xhr.statusText
+                    });
+                }
+            });
+        });
+
+        // ======================= LOGICA NUEVO AFILIADO ========================== //
+        $('#btnNuevoAfiliado').on('click', function () {
+            $('#formNuevoAfiliado')[0].reset();
+            $('#nuevoModal').fadeIn();
+        });
+
+        $('#closeNuevoModal').on('click', function () {
+            $('#nuevoModal').fadeOut();
+        });
+
+        $(window).on('click', function (e) {
+            if ($(e.target).is('#nuevoModal')) {
+                $('#nuevoModal').fadeOut();
+            }
+        });
+
+        $('#formNuevoAfiliado').on('submit', function (e) {
+            e.preventDefault();
+
+            Swal.fire({
+                title: 'Creando...',
+                text: 'Por favor espere',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            $.ajax({
+                url: "{% url 'crear_afiliado' %}",
+                type: 'POST',
+                data: $(this).serialize(),
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                success: function (data) {
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Creado!',
+                            text: 'El afiliado fue creado correctamente',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                        $('#nuevoModal').fadeOut();
                         $('#afiliadosTable').DataTable().ajax.reload(null, false);
                     } else {
                         Swal.fire({ icon: 'error', title: 'Error', text: data.message });

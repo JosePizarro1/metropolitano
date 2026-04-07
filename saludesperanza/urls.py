@@ -15,6 +15,7 @@ urlpatterns = [
     path('afiliados/data/', afiliados_data, name='afiliados_data'),
     path("cargar_excel/", cargar_afiliados_excel, name="cargar_excel"),
     path("afiliado/<int:afiliado_id>/editar/", editar_afiliado, name="editar_afiliado"),
+    path("crear_afiliado/", crear_afiliado, name="crear_afiliado"),
     path("atenciones/", atenciones_view, name="atenciones"),
     path("atenciones/list/<int:afiliado_id>/", atenciones_list, name="atenciones_list"),
     path("afiliados/search/", afiliados_search, name="afiliados_search"),
