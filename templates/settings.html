@@ -44,17 +44,7 @@
                     </div>
                 </div>
 
-                <div class="flex items-center justify-between p-4 bg-green-50 rounded-lg">
-                    <div class="flex items-center space-x-3">
-                        <div class="bg-green-100 rounded-full p-2">
-                            <i class="fas fa-envelope text-green-600"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm font-semibold text-gray-600">Email Actual</p>
-                            <p class="font-medium text-gray-800" id="currentEmail">{{ request.user.email }}</p>
-                        </div>
-                    </div>
-                </div>
+
 
                 <div class="flex items-center justify-between p-4 bg-orange-50 rounded-lg">
                     <div class="flex items-center space-x-3">
@@ -154,54 +144,7 @@
             </form>
         </div>
 
-        <!-- Cambiar Email -->
-        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-            <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                <i class="fas fa-envelope mr-3 text-purple-500"></i>
-                Cambiar Email
-            </h3>
 
-            <form id="emailForm">
-                {% csrf_token %}
-                
-                <!-- Nuevo Email -->
-                <div class="mb-4">
-                    <label for="nuevoEmail" class="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
-                        <i class="fas fa-envelope mr-2 text-purple-500"></i>
-                        Nuevo Email
-                    </label>
-                    <input type="email" 
-                           id="nuevoEmail" 
-                           name="nuevo_email" 
-                           class="w-full rounded-lg border border-gray-300 p-3 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200"
-                           placeholder="Ingrese su nuevo email"
-                           required>
-                </div>
-
-                <!-- Confirmar Email -->
-                <div class="mb-6">
-                    <label for="confirmarEmail" class="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
-                        <i class="fas fa-envelope mr-2 text-blue-500"></i>
-                        Confirmar Email
-                    </label>
-                    <input type="email" 
-                           id="confirmarEmail" 
-                           name="confirmar_email" 
-                           class="w-full rounded-lg border border-gray-300 p-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
-                           placeholder="Confirme el email"
-                           required>
-                </div>
-
-                <!-- Botón de Envío -->
-                <button type="submit" 
-                        id="submitEmailBtn"
-                        class="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                        disabled>
-                    <i class="fas fa-envelope"></i>
-                    <span>Cambiar Email</span>
-                </button>
-            </form>
-        </div>
     </div>
 </div>
 
@@ -214,22 +157,10 @@ $(document).ready(function() {
         checkPasswordFormValidity();
     });
 
-    // Validación en tiempo real de email
-    $('#nuevoEmail, #confirmarEmail').on('input', function() {
-        validateEmails();
-        checkEmailFormValidity();
-    });
-
     // Envío del formulario de contraseña
     $('#passwordForm').on('submit', async function(e) {
         e.preventDefault();
         await changeOwnPassword();
-    });
-
-    // Envío del formulario de email
-    $('#emailForm').on('submit', async function(e) {
-        e.preventDefault();
-        await changeOwnEmail();
     });
 });
 
@@ -271,17 +202,6 @@ function validatePasswords() {
     return false;
 }
 
-// Validar que los emails coincidan
-function validateEmails() {
-    const email = $('#nuevoEmail').val();
-    const confirm = $('#confirmarEmail').val();
-    
-    if (email && confirm) {
-        return email === confirm;
-    }
-    return false;
-}
-
 // Verificar si el formulario de contraseña es válido
 function checkPasswordFormValidity() {
     const newPassword = $('#nuevaPassword').val();
@@ -290,16 +210,6 @@ function checkPasswordFormValidity() {
     
     const isValid = newPassword && confirmPassword && passwordsMatch;
     $('#submitPasswordBtn').prop('disabled', !isValid);
-}
-
-// Verificar si el formulario de email es válido
-function checkEmailFormValidity() {
-    const newEmail = $('#nuevoEmail').val();
-    const confirmEmail = $('#confirmarEmail').val();
-    const emailsMatch = validateEmails();
-    
-    const isValid = newEmail && confirmEmail && emailsMatch;
-    $('#submitEmailBtn').prop('disabled', !isValid);
 }
 
 // Función para cambiar propia contraseña
@@ -351,74 +261,6 @@ async function changeOwnPassword() {
             $('#submitPasswordBtn').prop('disabled', true);
         } else {
             throw new Error(data.message || 'Error al cambiar la contraseña');
-        }
-    } catch (error) {
-        await Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.message,
-            confirmButtonColor: '#ef4444',
-            background: '#f8fafc',
-            color: '#1f2937'
-        });
-    }
-}
-
-
-
-
-// Función para cambiar propio email
-async function changeOwnEmail() {
-    const newEmail = $('#nuevoEmail').val();
-
-    // Confirmación con SweetAlert
-    const result = await Swal.fire({
-        title: '¿Cambiar email?',
-        html: `Estás a punto de cambiar tu email a: <strong>${newEmail}</strong>`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#8b5cf6',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: 'Sí, cambiar',
-        cancelButtonText: 'Cancelar',
-        background: '#f8fafc',
-        color: '#1f2937'
-    });
-
-    if (!result.isConfirmed) return;
-
-    try {
-        const response = await fetch("{% url 'change_own_email' %}", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": "{{ csrf_token }}"
-            },
-            body: JSON.stringify({
-                new_email: newEmail
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            await Swal.fire({
-                icon: 'success',
-                title: '¡Email actualizado!',
-                html: `Tu email se ha cambiado a: <strong>${newEmail}</strong>`,
-                confirmButtonColor: '#8b5cf6',
-                background: '#f8fafc',
-                color: '#1f2937'
-            });
-            
-            // Actualizar email en la interfaz
-            $('#currentEmail').text(newEmail);
-            
-            // Limpiar formulario
-            $('#emailForm')[0].reset();
-            $('#submitEmailBtn').prop('disabled', true);
-        } else {
-            throw new Error(data.message || 'Error al cambiar el email');
         }
     } catch (error) {
         await Swal.fire({

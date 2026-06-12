@@ -155,23 +155,51 @@
         text-transform: uppercase;
     }
 
-    .age-nino      { background: #e0f2fe; color: #0369a1; }
-    .age-adolescente { background: #ede9fe; color: #6d28d9; }
-    .age-joven     { background: #d1fae5; color: #065f46; }
-    .age-adulto    { background: #fef3c7; color: #92400e; }
-    .age-mayor     { background: #fee2e2; color: #991b1b; }
+    .age-nino {
+        background: #e0f2fe;
+        color: #0369a1;
+    }
 
-    .age-badge { cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
-    .age-badge:hover { transform: scale(1.12); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    .age-adolescente {
+        background: #ede9fe;
+        color: #6d28d9;
+    }
+
+    .age-joven {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .age-adulto {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .age-mayor {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .age-badge {
+        cursor: pointer;
+        transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .age-badge:hover {
+        transform: scale(1.12);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
 
     /* Legend Modal */
     #leyendaEdadModal {
         display: none;
         position: fixed;
         z-index: 3000;
-        left: 0; top: 0;
-        width: 100%; height: 100%;
-        background: rgba(15,23,42,0.55);
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.55);
         backdrop-filter: blur(5px);
         -webkit-backdrop-filter: blur(5px);
     }
@@ -183,9 +211,9 @@
         width: 92%;
         max-width: 420px;
         border-radius: 24px;
-        box-shadow: 0 30px 60px -12px rgba(0,0,0,0.25);
+        box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.25);
         overflow: hidden;
-        animation: modalSlideUp 0.35s cubic-bezier(0.4,0,0.2,1);
+        animation: modalSlideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .leyenda-header {
@@ -206,25 +234,32 @@
 
     .leyenda-header p {
         margin: 4px 0 0;
-        color: rgba(255,255,255,0.75);
+        color: rgba(255, 255, 255, 0.75);
         font-size: 0.78rem;
     }
 
     .close-leyenda {
         position: absolute;
-        right: 18px; top: 16px;
-        background: rgba(255,255,255,0.2);
+        right: 18px;
+        top: 16px;
+        background: rgba(255, 255, 255, 0.2);
         border: none;
         color: white;
-        width: 28px; height: 28px;
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
         cursor: pointer;
         font-size: 1.1rem;
         line-height: 1;
-        display: flex; align-items: center; justify-content: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         transition: background 0.2s;
     }
-    .close-leyenda:hover { background: rgba(255,255,255,0.35); }
+
+    .close-leyenda:hover {
+        background: rgba(255, 255, 255, 0.35);
+    }
 
     .leyenda-body {
         padding: 1.25rem 1.75rem 1.5rem;
@@ -243,7 +278,10 @@
         border: 1px solid #e2e8f0;
         transition: transform 0.15s;
     }
-    .leyenda-row:hover { transform: translateX(4px); }
+
+    .leyenda-row:hover {
+        transform: translateX(4px);
+    }
 
     .leyenda-pill {
         font-size: 0.65rem;
@@ -481,8 +519,10 @@
         transition: all 0.2s;
     }
 
-    #formEditarAfiliado input:focus, #formEditarAfiliado select:focus,
-    #formNuevoAfiliado input:focus, #formNuevoAfiliado select:focus {
+    #formEditarAfiliado input:focus,
+    #formEditarAfiliado select:focus,
+    #formNuevoAfiliado input:focus,
+    #formNuevoAfiliado select:focus {
         outline: none;
         border-color: var(--primary);
         background: white;
@@ -514,8 +554,8 @@
 
 <div id="afiliados-page-content">
     <div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
-        <h2 class="page-title">Directorio de Afiliados</h2>
-        <button id="btnNuevoAfiliado" style="padding: 10px 20px; background: var(--primary-gradient); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2); transition: transform 0.2s;">
+        <button id="btnNuevoAfiliado"
+            style="padding: 10px 20px; background: var(--primary-gradient); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2); transition: transform 0.2s;">
             <i class="fas fa-plus" style="margin-right: 5px;"></i> Nuevo Afiliado
         </button>
     </div>
@@ -603,7 +643,8 @@
 
             <label for="fecha_nacimiento">Fecha de Nacimiento</label>
             <input id="fecha_nacimiento" name="fecha_nacimiento" type="date">
-            <div id="edad_calc_editar" style="font-size: 0.75rem; color: #6366f1; margin-top: 4px; font-weight: 600; min-height: 16px;"></div>
+            <div id="edad_calc_editar"
+                style="font-size: 0.75rem; color: #6366f1; margin-top: 4px; font-weight: 600; min-height: 16px;"></div>
 
             <label for="celular">Celular</label>
             <input id="celular" name="celular" type="text" placeholder="Ej: 945770325">
@@ -620,31 +661,60 @@
         <h3 style="margin-bottom:15px;color:#10b981;"><i class="fas fa-user-plus mr-2"></i> Nuevo Afiliado</h3>
         <form id="formNuevoAfiliado">
             <!-- Reuse similar styles but with different IDs -->
-            <label style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.025em;" for="nuevo_dni">DNI</label>
-            <input style="width:100%;padding:12px 16px;border-radius:12px;border:1px solid var(--border-color);background:#f8fafc;font-size:0.95rem;" id="nuevo_dni" name="dni" type="text" required>
+            <label
+                style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.025em;"
+                for="nuevo_dni">DNI</label>
+            <input
+                style="width:100%;padding:12px 16px;border-radius:12px;border:1px solid var(--border-color);background:#f8fafc;font-size:0.95rem;"
+                id="nuevo_dni" name="dni" type="text" required>
 
-            <label style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.025em;" for="nuevo_apellido_paterno">Apellido Paterno</label>
-            <input style="width:100%;padding:12px 16px;border-radius:12px;border:1px solid var(--border-color);background:#f8fafc;font-size:0.95rem;" id="nuevo_apellido_paterno" name="apellido_paterno" type="text" required>
+            <label
+                style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.025em;"
+                for="nuevo_apellido_paterno">Apellido Paterno</label>
+            <input
+                style="width:100%;padding:12px 16px;border-radius:12px;border:1px solid var(--border-color);background:#f8fafc;font-size:0.95rem;"
+                id="nuevo_apellido_paterno" name="apellido_paterno" type="text" required>
 
-            <label style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.025em;" for="nuevo_apellido_materno">Apellido Materno</label>
-            <input style="width:100%;padding:12px 16px;border-radius:12px;border:1px solid var(--border-color);background:#f8fafc;font-size:0.95rem;" id="nuevo_apellido_materno" name="apellido_materno" type="text" required>
+            <label
+                style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.025em;"
+                for="nuevo_apellido_materno">Apellido Materno</label>
+            <input
+                style="width:100%;padding:12px 16px;border-radius:12px;border:1px solid var(--border-color);background:#f8fafc;font-size:0.95rem;"
+                id="nuevo_apellido_materno" name="apellido_materno" type="text" required>
 
-            <label style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.025em;" for="nuevo_nombres">Nombres</label>
-            <input style="width:100%;padding:12px 16px;border-radius:12px;border:1px solid var(--border-color);background:#f8fafc;font-size:0.95rem;" id="nuevo_nombres" name="nombres" type="text" required>
+            <label
+                style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.025em;"
+                for="nuevo_nombres">Nombres</label>
+            <input
+                style="width:100%;padding:12px 16px;border-radius:12px;border:1px solid var(--border-color);background:#f8fafc;font-size:0.95rem;"
+                id="nuevo_nombres" name="nombres" type="text" required>
 
-            <label style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.025em;" for="nuevo_sexo">Sexo</label>
-            <select style="width:100%;padding:12px 16px;border-radius:12px;border:1px solid var(--border-color);background:#f8fafc;font-size:0.95rem;" id="nuevo_sexo" name="sexo" required>
+            <label
+                style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.025em;"
+                for="nuevo_sexo">Sexo</label>
+            <select
+                style="width:100%;padding:12px 16px;border-radius:12px;border:1px solid var(--border-color);background:#f8fafc;font-size:0.95rem;"
+                id="nuevo_sexo" name="sexo" required>
                 <option value="">--</option>
                 <option value="M">Masculino</option>
                 <option value="F">Femenino</option>
             </select>
 
-            <label style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.025em;" for="nuevo_fecha_nacimiento">Fecha de Nacimiento</label>
-            <input style="width:100%;padding:12px 16px;border-radius:12px;border:1px solid var(--border-color);background:#f8fafc;font-size:0.95rem;" id="nuevo_fecha_nacimiento" name="fecha_nacimiento" type="date" required>
-            <div id="edad_calc_nuevo" style="font-size: 0.75rem; color: #10b981; margin-top: 4px; font-weight: 600; min-height: 16px;"></div>
+            <label
+                style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.025em;"
+                for="nuevo_fecha_nacimiento">Fecha de Nacimiento</label>
+            <input
+                style="width:100%;padding:12px 16px;border-radius:12px;border:1px solid var(--border-color);background:#f8fafc;font-size:0.95rem;"
+                id="nuevo_fecha_nacimiento" name="fecha_nacimiento" type="date" required>
+            <div id="edad_calc_nuevo"
+                style="font-size: 0.75rem; color: #10b981; margin-top: 4px; font-weight: 600; min-height: 16px;"></div>
 
-            <label style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.025em;" for="nuevo_celular">Celular</label>
-            <input style="width:100%;padding:12px 16px;border-radius:12px;border:1px solid var(--border-color);background:#f8fafc;font-size:0.95rem;" id="nuevo_celular" name="celular" type="text" placeholder="Ej: 945770325">
+            <label
+                style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.025em;"
+                for="nuevo_celular">Celular</label>
+            <input
+                style="width:100%;padding:12px 16px;border-radius:12px;border:1px solid var(--border-color);background:#f8fafc;font-size:0.95rem;"
+                id="nuevo_celular" name="celular" type="text" placeholder="Ej: 945770325">
 
             <button type="submit" style="background: var(--success-gradient);">Crear Afiliado</button>
         </form>
@@ -677,16 +747,16 @@
                             if (isNaN(nac)) return null;
                             let anios = hoy.getFullYear() - nac.getFullYear();
                             let meses = hoy.getMonth() - nac.getMonth();
-                            let dias  = hoy.getDate()  - nac.getDate();
-                            if (dias < 0)  { meses--; }
+                            let dias = hoy.getDate() - nac.getDate();
+                            if (dias < 0) { meses--; }
                             if (meses < 0) { anios--; meses += 12; }
                             // Edad en meses totales para comparación precisa
                             const totalMeses = anios * 12 + (meses < 0 ? meses + 12 : meses);
-                            if (anios < 12)  return { label: 'Niño',        cls: 'age-nino' };
-                            if (anios < 18)  return { label: 'Adolescente', cls: 'age-adolescente' };
-                            if (anios < 30)  return { label: 'Joven',       cls: 'age-joven' };
-                            if (anios < 60)  return { label: 'Adulto',      cls: 'age-adulto' };
-                            return             { label: 'Ad. Mayor',   cls: 'age-mayor' };
+                            if (anios < 12) return { label: 'Niño', cls: 'age-nino' };
+                            if (anios < 18) return { label: 'Adolescente', cls: 'age-adolescente' };
+                            if (anios < 30) return { label: 'Joven', cls: 'age-joven' };
+                            if (anios < 60) return { label: 'Adulto', cls: 'age-adulto' };
+                            return { label: 'Ad. Mayor', cls: 'age-mayor' };
                         }
 
                         let iconHtml = '-';
@@ -704,12 +774,12 @@
                         return `<div class="gender-age-cell">${iconHtml}${badgeHtml}</div>`;
                     }
                 },
-                { 
-                    data: 'fecha_nacimiento', 
+                {
+                    data: 'fecha_nacimiento',
                     width: '90px',
                     render: function (data) {
                         if (!data || data === '-') return '-';
-                        
+
                         // Formatear la fecha a DD/MM/YYYY
                         const partes = data.split('-');
                         let displayDate = data;
@@ -718,16 +788,16 @@
                         } else {
                             displayDate = data; // fallback
                         }
-                        
+
                         // Calcular edad cronológica compacta (Ej: 25a 3m 12d)
                         const hoy = new Date();
                         const nac = new Date(data + 'T00:00:00');
                         if (isNaN(nac.getTime())) return displayDate;
-                        
+
                         let a = hoy.getFullYear() - nac.getFullYear();
                         let m = hoy.getMonth() - nac.getMonth();
                         let d = hoy.getDate() - nac.getDate();
-                        
+
                         if (d < 0) {
                             m--;
                             const ultimoMes = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
@@ -737,7 +807,7 @@
                             a--;
                             m += 12;
                         }
-                        
+
                         let texto = [];
                         if (a > 0) texto.push(`${a}a`);
                         if (m > 0) texto.push(`${m}m`);
@@ -1062,11 +1132,11 @@
             const hoy = new Date();
             const nac = new Date(fechaNacStr + 'T00:00:00'); // Evita desfases de timezone
             if (isNaN(nac.getTime())) return '';
-            
+
             let a = hoy.getFullYear() - nac.getFullYear();
             let m = hoy.getMonth() - nac.getMonth();
             let d = hoy.getDate() - nac.getDate();
-            
+
             if (d < 0) {
                 m--;
                 const ultimoMes = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
@@ -1076,12 +1146,12 @@
                 a--;
                 m += 12;
             }
-            
+
             let texto = [];
-            if (a > 0) texto.push(`${a} año${a!==1?'s':''}`);
-            if (m > 0) texto.push(`${m} mes${m!==1?'es':''}`);
-            if (d > 0) texto.push(`${d} día${d!==1?'s':''}`);
-            
+            if (a > 0) texto.push(`${a} año${a !== 1 ? 's' : ''}`);
+            if (m > 0) texto.push(`${m} mes${m !== 1 ? 'es' : ''}`);
+            if (d > 0) texto.push(`${d} día${d !== 1 ? 's' : ''}`);
+
             if (texto.length === 0) return '0 días';
             return 'Edad: ' + texto.join(', ');
         }
@@ -1091,11 +1161,11 @@
             $(labelId).text(calcularEdadCronologica(fechaVal));
         }
 
-        $('#fecha_nacimiento').on('input change', function() {
+        $('#fecha_nacimiento').on('input change', function () {
             actualizarEdadCronologica('#fecha_nacimiento', '#edad_calc_editar');
         });
 
-        $('#nuevo_fecha_nacimiento').on('input change', function() {
+        $('#nuevo_fecha_nacimiento').on('input change', function () {
             actualizarEdadCronologica('#nuevo_fecha_nacimiento', '#edad_calc_nuevo');
         });
 

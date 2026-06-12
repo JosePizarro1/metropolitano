@@ -3,9 +3,9 @@ import os
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from .models import Afiliado
 from datetime import datetime
 from django.shortcuts import render, redirect
@@ -239,17 +239,24 @@ def reportes_view(request):
     ).distinct().count()
 
     # 2. Obtener todos los servicios disponibles
-    todos_servicios = Servicio.objects.all()
+    todos_servicios = list(Servicio.objects.all())
+    todos_servicios_set = set(todos_servicios)
+    todos_servicios_count = len(todos_servicios)
+
+    # Prefetch de las atenciones de este año (con sus servicios precargados)
+    atenciones_del_anio = Atencion.objects.filter(fecha_atencion__year=año_actual).select_related('servicio')
 
     # 3. Afiliados que ya tienen TODAS las atenciones del mes
     afiliados_completos = []
     afiliados_atendidos_mes = Afiliado.objects.filter(
         atenciones__fecha_atencion__range=(fecha_inicio_dt, fecha_fin_dt)
-    ).distinct()
+    ).distinct().prefetch_related(
+        Prefetch('atenciones', queryset=atenciones_del_anio, to_attr='atenciones_anio')
+    )
 
     for afiliado in afiliados_atendidos_mes:
-        servicios_atendidos = afiliado.servicios_del_anio(año_actual)
-        if servicios_atendidos.count() == todos_servicios.count():
+        servicios_atendidos = {att.servicio for att in afiliado.atenciones_anio}
+        if len(servicios_atendidos) == todos_servicios_count:
             afiliados_completos.append(afiliado)
 
     total_completos = len(afiliados_completos)
@@ -265,8 +272,8 @@ def reportes_view(request):
     faltan_mayor = 0
 
     for afiliado in afiliados_atendidos_mes:
-        servicios_atendidos = set(afiliado.servicios_del_anio(año_actual))
-        servicios_pendientes = set(todos_servicios) - servicios_atendidos
+        servicios_atendidos = {att.servicio for att in afiliado.atenciones_anio}
+        servicios_pendientes = todos_servicios_set - servicios_atendidos
 
         # Crear lista de servicios con estado para el template
         servicios_estado = []
@@ -530,6 +537,9 @@ def procesar_carga_afiliados(request):
 
 
 def login_view(request):
+    if request.user.is_authenticated:
+        return redirect("dashboard")
+
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get("password")
@@ -1167,3 +1177,242 @@ def eliminar_todos_afiliados(request):
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)})
     return JsonResponse({'status': 'error', 'message': 'Método no permitido'}, status=400)
+
+
+@login_required
+@user_passes_test(is_superuser)
+def admin_users_list_data(request):
+    """
+    Endpoint para listar usuarios en el DataTable de administración
+    """
+    draw = int(request.GET.get('draw', 1))
+    start = int(request.GET.get('start', 0))
+    length = int(request.GET.get('length', 50))
+    search_value = request.GET.get('search[value]', '').strip()
+
+    queryset = User.objects.filter(is_superuser=False).order_by('username')
+
+    if search_value:
+        queryset = queryset.filter(
+            Q(username__icontains=search_value) |
+            Q(first_name__icontains=search_value) |
+            Q(last_name__icontains=search_value) |
+            Q(email__icontains=search_value)
+        )
+
+    total_records = queryset.count()
+    page_qs = list(queryset[start:start+length])
+
+    data = []
+    for u in page_qs:
+        data.append({
+            'id': u.id,
+            'username': u.username,
+            'first_name': u.first_name or '',
+            'last_name': u.last_name or '',
+            'email': u.email or '',
+            'is_active': u.is_active,
+            'last_login': u.last_login.strftime('%d/%m/%Y %H:%M') if u.last_login else 'Nunca',
+        })
+
+    return JsonResponse({
+        'draw': draw,
+        'recordsTotal': total_records,
+        'recordsFiltered': total_records,
+        'data': data
+    })
+
+
+@login_required
+@user_passes_test(is_superuser)
+def crear_usuario_manual(request):
+    """
+    Creación manual de usuarios desde el modal de administración
+    """
+    if request.method == "POST":
+        try:
+            username = request.POST.get("username", "").strip()
+            first_name = request.POST.get("first_name", "").strip()
+            last_name = request.POST.get("last_name", "").strip()
+            password = request.POST.get("password", "").strip()
+
+            if not username or not password:
+                return JsonResponse({"success": False, "message": "El DNI (usuario) y la contraseña son requeridos."})
+
+            if len(password) < 6:
+                return JsonResponse({"success": False, "message": "La contraseña debe tener al menos 6 caracteres."})
+
+            # Validar si el usuario ya existe
+            if User.objects.filter(username=username).exists():
+                return JsonResponse({"success": False, "message": f"El usuario/DNI {username} ya existe."})
+
+            email = f"{username}@metropolitano.com"
+
+            User.objects.create_user(
+                username=username,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                is_active=True
+            )
+            return JsonResponse({"success": True, "message": f"Usuario {username} creado correctamente."})
+        except Exception as e:
+            return JsonResponse({"success": False, "message": str(e)})
+
+    return JsonResponse({"success": False, "message": "Método no permitido"}, status=405)
+
+
+@login_required
+@user_passes_test(is_superuser)
+def toggle_user_status(request, user_id):
+    """
+    Desactiva/activa un usuario
+    """
+    if request.method == "POST":
+        try:
+            user = get_object_or_404(User, id=user_id, is_superuser=False)
+            user.is_active = not user.is_active
+            user.save()
+            estado = "activo" if user.is_active else "inactivo"
+            return JsonResponse({"success": True, "message": f"Usuario {user.username} marcado como {estado}."})
+        except Exception as e:
+            return JsonResponse({"success": False, "message": str(e)})
+    return JsonResponse({"success": False, "message": "Método no permitido"}, status=405)
+
+
+@login_required
+@user_passes_test(is_superuser)
+def descargar_plantilla_usuarios(request):
+    """
+    Genera y descarga un Excel plantilla para carga masiva de usuarios
+    """
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Plantilla Usuarios"
+
+    # Encabezados
+    headers = ["DNI", "Contraseña", "Nombre", "Apellido"]
+    ws.append(headers)
+
+    # Datos de ejemplo
+    ws.append(["12345678", "claveTemporal123", "Juan Carlos", "Perez Gomez"])
+    ws.append(["87654321", "claveTemporal456", "Maria Elena", "Flores Diaz"])
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = "attachment; filename=plantilla_carga_usuarios.xlsx"
+    wb.save(response)
+    return response
+
+
+@login_required
+@user_passes_test(is_superuser)
+def cargar_usuarios_excel_ajax(request):
+    """
+    Procesa la carga masiva desde Excel mediante AJAX
+    """
+    if request.method == "POST" and request.FILES.get("archivo_excel"):
+        excel_file = request.FILES["archivo_excel"]
+        stats = {"created": 0, "updated": 0, "errors": 0, "total_rows": 0}
+        logs = []
+
+        try:
+            wb = openpyxl.load_workbook(excel_file, read_only=True, data_only=True)
+            ws = wb.active
+            
+            rows = list(ws.iter_rows(values_only=True))
+            if not rows:
+                return JsonResponse({"success": False, "message": "El archivo Excel está vacío."})
+            
+            headers = [str(h).strip().upper() for h in rows[0] if h is not None]
+            
+            # Mapear columnas
+            col_map = {}
+            for idx, h in enumerate(headers):
+                if "DNI" in h:
+                    col_map["dni"] = idx
+                elif "CONTRA" in h:
+                    col_map["password"] = idx
+                elif "NOMB" in h:
+                    col_map["first_name"] = idx
+                elif "APEL" in h:
+                    col_map["last_name"] = idx
+
+            if "dni" not in col_map or "password" not in col_map:
+                return JsonResponse({
+                    "success": False, 
+                    "message": "Columnas inválidas. El Excel debe contener al menos las columnas 'DNI' y 'Contraseña'."
+                })
+
+            def sanitize_val(val):
+                if val is None:
+                    return ""
+                if isinstance(val, float) and val.is_integer():
+                    return str(int(val))
+                return str(val).strip()
+
+            with transaction.atomic():
+                for idx, row in enumerate(rows[1:], start=2):
+                    if not any(row):
+                        continue
+                        
+                    stats["total_rows"] += 1
+                    try:
+                        dni_raw = row[col_map["dni"]]
+                        pass_raw = row[col_map["password"]]
+                        first_name = sanitize_val(row[col_map.get("first_name")]) if "first_name" in col_map else ""
+                        last_name = sanitize_val(row[col_map.get("last_name")]) if "last_name" in col_map else ""
+
+                        dni = sanitize_val(dni_raw)
+                        password = sanitize_val(pass_raw)
+
+                        if not dni or not password:
+                            stats["errors"] += 1
+                            logs.append(f"Fila {idx}: Saltado (faltan DNI o Contraseña)")
+                            continue
+
+                        if dni.endswith('.0'):
+                            dni = dni[:-2]
+
+                        email = f"{dni}@metropolitano.com"
+
+                        user_qs = User.objects.filter(username=dni)
+                        if user_qs.exists():
+                            user = user_qs.first()
+                            user.set_password(password)
+                            if first_name:
+                                user.first_name = first_name
+                            if last_name:
+                                user.last_name = last_name
+                            user.save()
+                            stats["updated"] += 1
+                            logs.append(f"Fila {idx}: Usuario {dni} actualizado.")
+                        else:
+                            User.objects.create_user(
+                                username=dni,
+                                password=password,
+                                first_name=first_name,
+                                last_name=last_name,
+                                email=email,
+                                is_active=True
+                            )
+                            stats["created"] += 1
+                            logs.append(f"Fila {idx}: Usuario {dni} ({first_name} {last_name}) creado correctamente.")
+
+                    except Exception as e_row:
+                        stats["errors"] += 1
+                        logs.append(f"Fila {idx}: Error → {str(e_row)}")
+
+            return JsonResponse({
+                "success": True,
+                "stats": stats,
+                "logs": logs
+            })
+
+        except Exception as e:
+            return JsonResponse({"success": False, "message": f"Error al procesar el archivo Excel: {str(e)}"})
+
+    return JsonResponse({"success": False, "message": "Método no permitido o archivo faltante."}, status=400)
+

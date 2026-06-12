@@ -1,337 +1,703 @@
 {% extends "base.html" %}
 
-{% block title %}Panel de Administración{% endblock %}
+{% block title %}Panel de Administración - Metropolitano{% endblock %}
 
 {% block content %}
-
+<!-- FontAwesome & Tailwind -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.tailwindcss.com"></script>
-<div class="min-h-screen bg-gray-50 p-6">
-    <!-- Header -->
-    <div class="bg-white rounded-2xl shadow-lg p-6 mb-6 border-l-4 border-blue-500">
-        <div class="flex justify-between items-center">
-            <div>
-                <h2 class="text-3xl font-bold text-gray-800 mb-2 flex items-center">
-                    <i class="fas fa-user-shield mr-3 text-blue-500"></i>
-                    Panel de Administración
-                </h2>
-                <p class="text-gray-600">Gestiona usuarios y restablece contraseñas del sistema</p>
+
+<div class="min-h-screen bg-slate-50/50 p-2 md:p-6 font-sans">
+    
+    <!-- Cabecera -->
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 mb-8 transition-all hover:shadow-md duration-300">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-center space-x-4">
+                <div class="bg-indigo-50 text-indigo-600 rounded-2xl p-4 transition-all duration-300 hover:rotate-6">
+                    <i class="fas fa-user-shield text-3xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">Panel de Control Admin</h1>
+                    <p class="text-slate-500 font-medium mt-1">Gestión integral de usuarios, accesos y carga masiva</p>
+                </div>
             </div>
-            <div class="bg-blue-100 rounded-full p-3">
-                <i class="fas fa-cogs text-blue-600 text-2xl"></i>
+            
+            <!-- Pestañas de Navegación -->
+            <div class="bg-slate-100/80 p-1.5 rounded-2xl flex space-x-1 self-start md:self-center">
+                <button onclick="switchTab('usuarios')" id="btn-tab-usuarios" 
+                        class="px-5 py-2.5 rounded-xl text-sm font-semibold tracking-wide transition-all duration-300 flex items-center space-x-2 bg-white text-indigo-600 shadow-sm">
+                    <i class="fas fa-users-cog"></i>
+                    <span>Usuarios</span>
+                </button>
+                <button onclick="switchTab('importar')" id="btn-tab-importar" 
+                        class="px-5 py-2.5 rounded-xl text-sm font-semibold tracking-wide transition-all duration-300 flex items-center space-x-2 text-slate-600 hover:bg-slate-200/50">
+                    <i class="fas fa-file-import"></i>
+                    <span>Carga Masiva Excel</span>
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Contenido Principal -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Selección de Usuario -->
-        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-            <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                <i class="fas fa-users mr-3 text-blue-500"></i>
-                Seleccionar Usuario
-            </h3>
-            
-            <div class="mb-4">
-                <label for="usuarioSelect" class="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                    <i class="fas fa-search mr-2 text-blue-500"></i>
-                    Buscar Usuario
-                </label>
-                <select id="usuarioSelect" style="width: 100%;">
-                    <option value=""></option>
-                </select>
+    <!-- Pestaña: Gestión de Usuarios -->
+    <div id="tab-usuarios" class="tab-content block fade-in-up">
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-800 flex items-center">
+                        <i class="fas fa-list-ul mr-2.5 text-indigo-500"></i>
+                        Lista de Usuarios del Sistema
+                    </h3>
+                    <p class="text-slate-400 text-xs mt-0.5">Médicos, enfermeros y personal administrativo con credenciales de acceso</p>
+                </div>
+                <button onclick="openCreateModal()" 
+                        class="px-5 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white text-sm font-bold tracking-wide rounded-2xl shadow-lg shadow-indigo-100 hover:shadow-indigo-200 transform hover:-translate-y-0.5 transition-all duration-300 flex items-center space-x-2">
+                    <i class="fas fa-plus"></i>
+                    <span>Crear Nuevo Usuario</span>
+                </button>
             </div>
 
-            <!-- Información del Usuario Seleccionado -->
-            <div id="userInfo" class="hidden bg-blue-50 rounded-xl p-4 border border-blue-200 mt-4">
-                <div class="flex items-center space-x-3">
-                    <div class="bg-blue-100 rounded-full p-2">
-                        <i class="fas fa-user text-blue-600"></i>
+            <!-- Tabla DataTables -->
+            <div class="overflow-x-auto">
+                <table id="tablaUsuarios" class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-400 font-bold text-xs uppercase border-b border-slate-100">
+                            <th class="p-4">DNI / Usuario</th>
+                            <th class="p-4">Nombre Completo</th>
+                            <th class="p-4">Último Acceso</th>
+                            <th class="p-4 text-center">Estado</th>
+                            <th class="p-4 text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-slate-600 text-sm divide-y divide-slate-100">
+                        <!-- Llenado dinámicamente con AJAX -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestaña: Carga Masiva (Excel) -->
+    <div id="tab-importar" class="tab-content hidden fade-in-up">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Columna Izquierda: Formulario e Instrucciones -->
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
+                    <h3 class="text-lg font-bold text-slate-800 mb-2 flex items-center">
+                        <i class="fas fa-download text-emerald-500 mr-2.5"></i>
+                        Descargar Plantilla
+                    </h3>
+                    <p class="text-slate-500 text-sm mb-6">Descargá el archivo de Excel oficial para asegurarte de ingresar la información en las columnas correctas.</p>
+                    
+                    <a href="{% url 'descargar_plantilla_usuarios' %}" 
+                       class="w-full py-3.5 bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 font-bold rounded-2xl transition-all duration-200 flex items-center justify-center space-x-2 group">
+                        <i class="fas fa-file-excel text-emerald-600 text-lg transition-transform group-hover:scale-110"></i>
+                        <span>Descargar Plantilla Excel</span>
+                    </a>
+                </div>
+
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
+                    <h3 class="text-sm font-bold text-slate-800 mb-3 flex items-center">
+                        <i class="fas fa-info-circle text-indigo-500 mr-2"></i>
+                        Instrucciones del Archivo
+                    </h3>
+                    <ul class="text-xs text-slate-500 space-y-3 list-disc pl-4">
+                        <li>El archivo debe ser de formato <strong>.xlsx</strong>.</li>
+                        <li>Las columnas obligatorias son: <strong>DNI</strong> y <strong>Contraseña</strong>.</li>
+                        <li>Podés opcionalmente agregar <strong>Nombre</strong> y <strong>Apellido</strong>.</li>
+                        <li>Si el <strong>DNI ya existe</strong> en la base de datos, el sistema <strong>actualizará su contraseña y datos</strong>.</li>
+                        <li>Si no existe, se creará una cuenta nueva activa con un correo por defecto.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Columna Derecha: Dropzone y Progreso -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center">
+                        <i class="fas fa-cloud-upload-alt text-indigo-500 mr-2.5"></i>
+                        Cargar Archivo de Excel
+                    </h3>
+                    
+                    <!-- Formulario de Subida -->
+                    <form id="formCargarExcel" enctype="multipart/form-data" class="space-y-4">
+                        {% csrf_token %}
+                        <div id="dropzone" class="border-2 border-dashed border-slate-200 hover:border-indigo-400 rounded-3xl p-10 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 bg-slate-50/50 hover:bg-indigo-50/10">
+                            <div class="bg-indigo-50 text-indigo-600 rounded-full p-4 mb-4">
+                                <i class="fas fa-file-excel text-3xl"></i>
+                            </div>
+                            <p class="font-bold text-slate-700 text-sm">Arrastrá tu archivo Excel o hace clic aquí</p>
+                            <p class="text-slate-400 text-xs mt-1">Soporta únicamente archivos .xlsx</p>
+                            <input type="file" id="archivo_excel" name="archivo_excel" accept=".xlsx" class="hidden">
+                        </div>
+
+                        <div id="file-info" class="hidden flex items-center justify-between bg-indigo-50/30 border border-indigo-100 rounded-2xl p-4">
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-file-excel text-emerald-600 text-xl"></i>
+                                <div>
+                                    <p id="file-name" class="font-semibold text-slate-800 text-sm"></p>
+                                    <p id="file-size" class="text-slate-400 text-xs"></p>
+                                </div>
+                            </div>
+                            <button type="button" onclick="clearFile()" class="text-slate-400 hover:text-rose-500 transition-colors p-1">
+                                <i class="fas fa-times-circle text-lg"></i>
+                            </button>
+                        </div>
+
+                        <button type="submit" id="btnProcesarExcel" disabled
+                                class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold tracking-wide rounded-2xl shadow-lg shadow-indigo-100 hover:shadow-indigo-200 transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none">
+                            <i class="fas fa-spinner fa-spin hidden" id="spinner-subida"></i>
+                            <i class="fas fa-play" id="icon-subida"></i>
+                            <span>Procesar Importación</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Panel de Resultados del Excel -->
+                <div id="panelResultados" class="hidden bg-white rounded-3xl shadow-sm border border-slate-100 p-6 fade-in-up">
+                    <h3 class="text-lg font-bold text-slate-800 mb-6 flex items-center">
+                        <i class="fas fa-poll text-slate-600 mr-2.5"></i>
+                        Resumen del Procesamiento
+                    </h3>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-center">
+                            <p class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Total Leídos</p>
+                            <p id="stat-total" class="text-2xl font-black text-slate-800 mt-1">0</p>
+                        </div>
+                        <div class="bg-emerald-50/50 border border-emerald-100/50 rounded-2xl p-4 text-center">
+                            <p class="text-emerald-600/80 text-xs font-semibold uppercase tracking-wider">Creados</p>
+                            <p id="stat-creados" class="text-2xl font-black text-emerald-600 mt-1">0</p>
+                        </div>
+                        <div class="bg-indigo-50/50 border border-indigo-100/50 rounded-2xl p-4 text-center">
+                            <p class="text-indigo-600/80 text-xs font-semibold uppercase tracking-wider">Actualizados</p>
+                            <p id="stat-actualizados" class="text-2xl font-black text-indigo-600 mt-1">0</p>
+                        </div>
+                        <div class="bg-rose-50/50 border border-rose-100/50 rounded-2xl p-4 text-center">
+                            <p class="text-rose-600/80 text-xs font-semibold uppercase tracking-wider">Errores / Saltados</p>
+                            <p id="stat-errores" class="text-2xl font-black text-rose-600 mt-1">0</p>
+                        </div>
                     </div>
-                    <div>
-                        <h4 id="userName" class="font-semibold text-gray-800"></h4>
-                        <p id="userEmail" class="text-sm text-gray-600"></p>
-                        <p id="userLastLogin" class="text-xs text-gray-500 mt-1"></p>
+
+                    <!-- Bitácora de Procesamiento -->
+                    <h4 class="font-bold text-slate-700 text-sm mb-3">Detalle del log:</h4>
+                    <div id="excel-logs" class="max-height-[300px] overflow-y-auto border border-slate-100 rounded-2xl bg-slate-50/30 divide-y divide-slate-100 text-xs text-slate-600 p-3 space-y-1.5 max-h-72">
+                        <!-- Logs inyectados con JS -->
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Formulario de Contraseña -->
-        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-            <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                <i class="fas fa-key mr-3 text-green-500"></i>
-                Restablecer Contraseña
-            </h3>
-
-            <form id="passwordForm">
-                {% csrf_token %}
-                
-                <!-- Nueva Contraseña -->
-                <div class="mb-4">
-                    <label for="nuevaPassword" class="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
-                        <i class="fas fa-lock mr-2 text-green-500"></i>
-                        Nueva Contraseña
-                    </label>
-                    <div class="relative">
-                        <input type="password" 
-                               id="nuevaPassword" 
-                               name="nueva_password" 
-                               class="w-full rounded-lg border border-gray-300 p-3 pr-10 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
-                               placeholder="Ingrese nueva contraseña"
-                               required>
-                        <button type="button" 
-                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                onclick="togglePassword('nuevaPassword')">
-                            <i class="fas fa-eye"></i>
-                        </button>
+<!-- Modal: Crear Usuario -->
+<div class="modal fade" id="modalCrearUsuario" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3xl border-0 shadow-2xl">
+            <div class="modal-header border-b border-slate-50 p-6 flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-indigo-50 text-indigo-600 rounded-xl p-2.5">
+                        <i class="fas fa-user-plus text-lg"></i>
                     </div>
-                    <div id="passwordStrength" class="mt-2 hidden">
-                        <div class="flex space-x-1">
-                            <div class="h-1 flex-1 bg-gray-200 rounded"></div>
-                            <div class="h-1 flex-1 bg-gray-200 rounded"></div>
-                            <div class="h-1 flex-1 bg-gray-200 rounded"></div>
-                            <div class="h-1 flex-1 bg-gray-200 rounded"></div>
-                        </div>
-                        <p id="strengthText" class="text-xs mt-1"></p>
-                    </div>
+                    <h5 class="modal-title font-extrabold text-slate-800 text-lg">Crear Nuevo Usuario</h5>
                 </div>
-
-                <!-- Confirmar Contraseña -->
-                <div class="mb-6">
-                    <label for="confirmarPassword" class="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
-                        <i class="fas fa-lock mr-2 text-blue-500"></i>
-                        Confirmar Contraseña
-                    </label>
-                    <div class="relative">
-                        <input type="password" 
-                               id="confirmarPassword" 
-                               name="confirmar_password" 
-                               class="w-full rounded-lg border border-gray-300 p-3 pr-10 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
-                               placeholder="Confirme la contraseña"
-                               required>
-                        <button type="button" 
-                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                onclick="togglePassword('confirmarPassword')">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                    <div id="passwordMatch" class="mt-2 hidden">
-                        <p class="text-xs flex items-center">
-                            <i class="fas fa-check-circle mr-1"></i>
-                            <span>Las contraseñas coinciden</span>
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Botón de Envío -->
-                <button type="submit" 
-                        id="submitBtn"
-                        class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                        disabled>
-                    <i class="fas fa-save"></i>
-                    <span>Restablecer Contraseña</span>
+                <button type="button" class="text-slate-400 hover:text-slate-600" data-bs-dismiss="modal">
+                    <i class="fas fa-times text-lg"></i>
                 </button>
+            </div>
+            <form id="formCrearUsuario">
+                {% csrf_token %}
+                <div class="modal-body p-6 space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">DNI (Username) <span class="text-rose-500">*</span></label>
+                        <input type="text" name="username" required pattern="[0-9]+" title="Ingresa un DNI válido (números únicamente)"
+                               class="w-full rounded-2xl border border-slate-200 p-3 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all font-semibold text-slate-700"
+                               placeholder="Ej. 12345678">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Nombres</label>
+                            <input type="text" name="first_name"
+                                   class="w-full rounded-2xl border border-slate-200 p-3 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-slate-700"
+                                   placeholder="Ej. Juan Carlos">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Apellidos</label>
+                            <input type="text" name="last_name"
+                                   class="w-full rounded-2xl border border-slate-200 p-3 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-slate-700"
+                                   placeholder="Ej. Perez Gomez">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Contraseña <span class="text-rose-500">*</span></label>
+                            <input type="password" id="modal-pass" name="password" required minlength="6"
+                                   class="w-full rounded-2xl border border-slate-200 p-3 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-slate-700"
+                                   placeholder="Min. 6 caracteres">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Confirmar <span class="text-rose-500">*</span></label>
+                            <input type="password" id="modal-confirm" required minlength="6"
+                                   class="w-full rounded-2xl border border-slate-200 p-3 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-slate-700"
+                                   placeholder="Reingresar clave">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-t border-slate-50 p-6 flex space-x-3 bg-slate-50/50 rounded-b-3xl">
+                    <button type="button" class="flex-1 py-3 border border-slate-200 text-slate-500 font-bold text-sm rounded-2xl hover:bg-slate-100 transition-all" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-2xl shadow-lg shadow-indigo-100 hover:shadow-indigo-200 transition-all">Guardar Usuario</button>
+                </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- JavaScript -->
+<!-- Modal: Restablecer Contraseña -->
+<div class="modal fade" id="modalResetPass" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3xl border-0 shadow-2xl">
+            <div class="modal-header border-b border-slate-50 p-6 flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-emerald-50 text-emerald-600 rounded-xl p-2.5">
+                        <i class="fas fa-key text-lg"></i>
+                    </div>
+                    <h5 class="modal-title font-extrabold text-slate-800 text-lg">Restablecer Contraseña</h5>
+                </div>
+                <button type="button" class="text-slate-400 hover:text-slate-600" data-bs-dismiss="modal">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            <form id="formResetPass">
+                {% csrf_token %}
+                <input type="hidden" id="reset-user-id" name="user_id">
+                <div class="modal-body p-6 space-y-4">
+                    <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4">
+                        <p class="text-xs text-slate-400 font-bold uppercase">Usuario Seleccionado</p>
+                        <p class="text-slate-700 font-bold text-base mt-1" id="reset-user-display"></p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Nueva Contraseña <span class="text-rose-500">*</span></label>
+                        <input type="password" id="reset-pass" name="new_password" required minlength="6"
+                               class="w-full rounded-2xl border border-slate-200 p-3 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all text-slate-700"
+                               placeholder="Min. 6 caracteres">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Confirmar Nueva Contraseña <span class="text-rose-500">*</span></label>
+                        <input type="password" id="reset-confirm" required minlength="6"
+                               class="w-full rounded-2xl border border-slate-200 p-3 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all text-slate-700"
+                               placeholder="Reingresar nueva clave">
+                    </div>
+                </div>
+                <div class="modal-footer border-t border-slate-50 p-6 flex space-x-3 bg-slate-50/50 rounded-b-3xl">
+                    <button type="button" class="flex-1 py-3 border border-slate-200 text-slate-500 font-bold text-sm rounded-2xl hover:bg-slate-100 transition-all" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-2xl shadow-lg shadow-emerald-100 hover:shadow-emerald-200 transition-all">Cambiar Contraseña</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
 <script>
-$(document).ready(function() {
-    // Inicializar Select2 para usuarios
-    $('#usuarioSelect').select2({
-        placeholder: "Buscar usuario por nombre o email...",
-        minimumInputLength: 2,
-        ajax: {
-            url: "{% url 'admin_users_search' %}",  // Necesitarás crear esta URL
-            dataType: 'json',
-            delay: 250,
-            data: function(params) {
-                return {
-                    q: params.term
-                };
+    let tabla;
+
+    $(document).ready(function() {
+        // Mover modales al final del body para evitar conflictos de z-index con las transformaciones de CSS (fade-in-up)
+        $('#modalCrearUsuario').appendTo('body');
+        $('#modalResetPass').appendTo('body');
+
+        // Inicializar tabla de usuarios con DataTables
+        tabla = $('#tablaUsuarios').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: "{% url 'admin_users_list_data' %}",
+            columns: [
+                { data: 'username', className: 'p-4 font-bold text-slate-700' },
+                { 
+                    data: null, 
+                    className: 'p-4',
+                    render: function(data) {
+                        return `${data.first_name} ${data.last_name}`.trim() || '<span class="text-slate-300 italic">No especificado</span>';
+                    }
+                },
+                { data: 'last_login', className: 'p-4 text-slate-400 text-xs' },
+                { 
+                    data: 'is_active', 
+                    className: 'p-4 text-center',
+                    render: function(data, type, row) {
+                        const checked = data ? 'checked' : '';
+                        return `
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="sr-only peer" ${checked} onchange="toggleStatus(${row.id})">
+                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                            </label>
+                        `;
+                    }
+                },
+                {
+                    data: null,
+                    className: 'p-4 text-center',
+                    orderable: false,
+                    render: function(data) {
+                        return `
+                            <button onclick="openResetModal(${data.id}, '${data.username}')" 
+                                    class="p-2 bg-slate-50 hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 rounded-xl border border-slate-100 hover:border-emerald-100 transition-all" 
+                                    title="Restablecer Contraseña">
+                                <i class="fas fa-key"></i>
+                            </button>
+                        `;
+                    }
+                }
+            ],
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
             },
-            processResults: function(data) {
-                return {
-                    results: data.map(user => ({
-                        id: user.id,
-                        text: `${user.username} - ${user.email}`,
-                        userData: user
-                    }))
-                };
+            dom: '<"flex flex-col sm:flex-row justify-between items-center mb-4 gap-4"f>rt<"flex flex-col sm:flex-row justify-between items-center mt-4 gap-4"ip>',
+            drawCallback: function() {
+                // Agregar estilos estilizados a elementos de DataTables
+                $('.dataTables_filter input').addClass('rounded-2xl border border-slate-200 p-2.5 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50/50 transition-all outline-none text-sm w-full sm:w-64').attr('placeholder', 'Buscar usuarios...');
+                $('.dataTables_paginate .paginate_button').addClass('px-3 py-1 bg-white border border-slate-200 text-slate-600 rounded-xl mx-0.5 hover:bg-slate-50 transition-all font-semibold text-xs');
             }
-        }
-    });
-
-    // Cuando se selecciona un usuario
-    $('#usuarioSelect').on('change', function() {
-        const selectedOption = $(this).select2('data')[0];
-        
-        if (selectedOption && selectedOption.userData) {
-            const user = selectedOption.userData;
-            $('#userName').text(user.username);
-            $('#userEmail').text(user.email);
-            $('#userLastLogin').text(`Último acceso: ${user.last_login || 'Nunca'}`);
-            $('#userInfo').removeClass('hidden');
-            checkFormValidity();
-        } else {
-            $('#userInfo').addClass('hidden');
-            checkFormValidity();
-        }
-    });
-
-    // Validación en tiempo real de contraseñas
-    $('#nuevaPassword, #confirmarPassword').on('input', function() {
-        validatePasswords();
-        checkFormValidity();
-    });
-
-    // Envío del formulario
-    $('#passwordForm').on('submit', async function(e) {
-        e.preventDefault();
-        
-        const userId = $('#usuarioSelect').val();
-        const nuevaPassword = $('#nuevaPassword').val();
-        const confirmarPassword = $('#confirmarPassword').val();
-
-        if (!validatePasswords()) {
-            return;
-        }
-
-        // Confirmación con SweetAlert
-        const result = await Swal.fire({
-            title: '¿Restablecer contraseña?',
-            html: `Estás a punto de cambiar la contraseña de <strong>${$('#userName').text()}</strong>`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#10b981',
-            cancelButtonColor: '#6b7280',
-            confirmButtonText: 'Sí, restablecer',
-            cancelButtonText: 'Cancelar',
-            background: '#f8fafc',
-            color: '#1f2937'
         });
 
-        if (result.isConfirmed) {
-            await changePassword(userId, nuevaPassword);
-        }
+        // Configuración de Drag and Drop
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('archivo_excel');
+
+        dropzone.addEventListener('click', () => fileInput.click());
+        
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('border-indigo-400', 'bg-indigo-50/10');
+        });
+
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('border-indigo-400', 'bg-indigo-50/10');
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('border-indigo-400', 'bg-indigo-50/10');
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelected();
+            }
+        });
+
+        fileInput.addEventListener('change', handleFileSelected);
+
+        // Envío de Carga Masiva (Excel)
+        $('#formCargarExcel').on('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            // Animación cargando
+            $('#spinner-subida').removeClass('hidden');
+            $('#icon-subida').addClass('hidden');
+            $('#btnProcesarExcel').prop('disabled', true);
+
+            $.ajax({
+                url: "{% url 'cargar_usuarios_excel_ajax' %}",
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(res) {
+                    $('#spinner-subida').addClass('hidden');
+                    $('#icon-subida').removeClass('hidden');
+                    $('#btnProcesarExcel').prop('disabled', false);
+
+                    if (res.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Importación Completada!',
+                            text: 'El archivo Excel se ha procesado con éxito.',
+                            confirmButtonColor: '#4f46e5'
+                        });
+
+                        // Rellenar resumen
+                        $('#stat-total').text(res.stats.total_rows);
+                        $('#stat-creados').text(res.stats.created);
+                        $('#stat-actualizados').text(res.stats.updated);
+                        $('#stat-errores').text(res.stats.errors);
+
+                        // Rellenar bitácora
+                        const logContainer = $('#excel-logs');
+                        logContainer.empty();
+                        res.logs.forEach(log => {
+                            let itemClass = "bg-slate-50 text-slate-600";
+                            let icon = '<i class="fas fa-info-circle text-slate-400 mr-2"></i>';
+                            
+                            if (log.includes("creado")) {
+                                itemClass = "bg-emerald-50/50 text-emerald-700 border-l-2 border-emerald-500";
+                                icon = '<i class="fas fa-check-circle text-emerald-500 mr-2"></i>';
+                            } else if (log.includes("actualizado")) {
+                                itemClass = "bg-indigo-50/50 text-indigo-700 border-l-2 border-indigo-500";
+                                icon = '<i class="fas fa-edit text-indigo-500 mr-2"></i>';
+                            } else if (log.includes("Error") || log.includes("Saltado")) {
+                                itemClass = "bg-rose-50/50 text-rose-700 border-l-2 border-rose-500";
+                                icon = '<i class="fas fa-exclamation-triangle text-rose-500 mr-2"></i>';
+                            }
+
+                            logContainer.append(`
+                                <div class="p-2.5 rounded-xl ${itemClass} flex items-center">
+                                    ${icon}
+                                    <span>${log}</span>
+                                </div>
+                            `);
+                        });
+
+                        $('#panelResultados').removeClass('hidden');
+                        tabla.ajax.reload(null, false); // recargar tabla sin resetear paginación
+                        clearFile();
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error de importación',
+                            text: res.message,
+                            confirmButtonColor: '#ef4444'
+                        });
+                    }
+                },
+                error: function(err) {
+                    $('#spinner-subida').addClass('hidden');
+                    $('#icon-subida').removeClass('hidden');
+                    $('#btnProcesarExcel').prop('disabled', false);
+                    
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Ocurrió un error inesperado al subir el archivo.',
+                        confirmButtonColor: '#ef4444'
+                    });
+                }
+            });
+        });
+
+        // Envío de Crear Usuario
+        $('#formCrearUsuario').on('submit', function(e) {
+            e.preventDefault();
+            const pass = $('#modal-pass').val();
+            const confirm = $('#modal-confirm').val();
+
+            if (pass !== confirm) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Contraseñas no coinciden',
+                    text: 'Asegurate de escribir la misma contraseña en ambos campos.',
+                    confirmButtonColor: '#f59e0b'
+                });
+                return;
+            }
+
+            $.ajax({
+                url: "{% url 'crear_usuario_manual' %}",
+                type: "POST",
+                data: $(this).serialize(),
+                success: function(res) {
+                    if (res.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Usuario Creado!',
+                            text: res.message,
+                            confirmButtonColor: '#4f46e5'
+                        });
+                        $('#modalCrearUsuario').modal('hide');
+                        $('#formCrearUsuario')[0].reset();
+                        tabla.ajax.reload(null, false);
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: res.message,
+                            confirmButtonColor: '#ef4444'
+                        });
+                    }
+                }
+            });
+        });
+
+        // Envío de Restablecer Contraseña
+        $('#formResetPass').on('submit', function(e) {
+            e.preventDefault();
+            const pass = $('#reset-pass').val();
+            const confirm = $('#reset-confirm').val();
+
+            if (pass !== confirm) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Contraseñas no coinciden',
+                    text: 'Asegurate de escribir la misma contraseña en ambos campos.',
+                    confirmButtonColor: '#f59e0b'
+                });
+                return;
+            }
+
+            $.ajax({
+                url: "{% url 'admin_change_password' %}",
+                type: "POST",
+                data: JSON.stringify({
+                    user_id: $('#reset-user-id').val(),
+                    new_password: pass
+                }),
+                contentType: "application/json",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                success: function(res) {
+                    if (res.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Contraseña restablecida!',
+                            text: res.message,
+                            confirmButtonColor: '#10b981'
+                        });
+                        $('#modalResetPass').modal('hide');
+                        $('#formResetPass')[0].reset();
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: res.message,
+                            confirmButtonColor: '#ef4444'
+                        });
+                    }
+                }
+            });
+        });
     });
-});
 
-// Función para mostrar/ocultar contraseña
-function togglePassword(inputId) {
-    const input = document.getElementById(inputId);
-    const icon = input.nextElementSibling.querySelector('i');
-    
-    if (input.type === 'password') {
-        input.type = 'text';
-        icon.className = 'fas fa-eye-slash';
-    } else {
-        input.type = 'password';
-        icon.className = 'fas fa-eye';
+    // Pestañas
+    function switchTab(tabName) {
+        $('.tab-content').addClass('hidden');
+        $(`#tab-${tabName}`).removeClass('hidden');
+
+        // Estilos de botones
+        $('#btn-tab-usuarios, #btn-tab-importar').removeClass('bg-white text-indigo-600 shadow-sm').addClass('text-slate-600 hover:bg-slate-200/50');
+        $(`#btn-tab-${tabName}`).removeClass('text-slate-600 hover:bg-slate-200/50').addClass('bg-white text-indigo-600 shadow-sm');
     }
-}
 
-// Validar que las contraseñas coincidan
-function validatePasswords() {
-    const password = $('#nuevaPassword').val();
-    const confirm = $('#confirmarPassword').val();
-    const matchDiv = $('#passwordMatch');
-    
-    if (password && confirm) {
-        if (password === confirm) {
-            matchDiv.removeClass('hidden').addClass('text-green-600').removeClass('text-red-600');
-            matchDiv.find('i').removeClass('fa-times-circle').addClass('fa-check-circle');
-            matchDiv.find('span').text('Las contraseñas coinciden');
-            return true;
-        } else {
-            matchDiv.removeClass('hidden').removeClass('text-green-600').addClass('text-red-600');
-            matchDiv.find('i').removeClass('fa-check-circle').addClass('fa-times-circle');
-            matchDiv.find('span').text('Las contraseñas no coinciden');
-            return false;
-        }
+    // Modal de creación
+    function openCreateModal() {
+        $('#formCrearUsuario')[0].reset();
+        $('#modalCrearUsuario').modal('show');
     }
-    
-    matchDiv.addClass('hidden');
-    return false;
-}
 
-// Verificar si el formulario es válido
-function checkFormValidity() {
-    const userId = $('#usuarioSelect').val();
-    const password = $('#nuevaPassword').val();
-    const confirm = $('#confirmarPassword').val();
-    const isValid = userId && password && confirm && (password === confirm);
-    
-    $('#submitBtn').prop('disabled', !isValid);
-}
+    // Modal de cambio de contraseña
+    function openResetModal(userId, username) {
+        $('#formResetPass')[0].reset();
+        $('#reset-user-id').val(userId);
+        $('#reset-user-display').text(username);
+        $('#modalResetPass').modal('show');
+    }
 
-// Función para cambiar contraseña con fetch
-async function changePassword(userId, newPassword) {
-    try {
-        const response = await fetch("{% url 'admin_change_password' %}", {
-            method: "POST",
+    // Cambiar estado activo/inactivo
+    function toggleStatus(userId) {
+        $.ajax({
+            url: `/admin-panel/users/toggle/${userId}/`,
+            type: "POST",
             headers: {
-                "Content-Type": "application/json",
                 "X-CSRFToken": "{{ csrf_token }}"
             },
-            body: JSON.stringify({
-                user_id: userId,
-                new_password: newPassword
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            await Swal.fire({
-                icon: 'success',
-                title: '¡Contraseña actualizada!',
-                text: 'La contraseña se ha restablecido correctamente',
-                confirmButtonColor: '#10b981',
-                background: '#f8fafc',
-                color: '#1f2937'
-            });
-            
-            // Limpiar formulario
-            $('#passwordForm')[0].reset();
-            $('#usuarioSelect').val(null).trigger('change');
-            $('#userInfo').addClass('hidden');
-            $('#submitBtn').prop('disabled', true);
-        } else {
-            throw new Error(data.message || 'Error al cambiar la contraseña');
-        }
-    } catch (error) {
-        await Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.message,
-            confirmButtonColor: '#ef4444',
-            background: '#f8fafc',
-            color: '#1f2937'
+            success: function(res) {
+                if (res.success) {
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 2500,
+                        timerProgressBar: true
+                    });
+                    Toast.fire({
+                        icon: 'success',
+                        title: res.message
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: res.message
+                    });
+                    tabla.ajax.reload(null, false);
+                }
+            },
+            error: function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se pudo cambiar el estado del usuario.'
+                });
+                tabla.ajax.reload(null, false);
+            }
         });
     }
-}
+
+    // Manejar archivo Excel seleccionado
+    function handleFileSelected() {
+        const fileInput = document.getElementById('archivo_excel');
+        const file = fileInput.files[0];
+        
+        if (file) {
+            if (!file.name.endsWith('.xlsx')) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Formato no soportado',
+                    text: 'Por favor, selecciona únicamente archivos con extensión .xlsx (Excel).',
+                    confirmButtonColor: '#ef4444'
+                });
+                clearFile();
+                return;
+            }
+
+            $('#file-name').text(file.name);
+            $('#file-size').text((file.size / 1024).toFixed(1) + ' KB');
+            
+            $('#dropzone').addClass('hidden');
+            $('#file-info').removeClass('hidden');
+            $('#btnProcesarExcel').prop('disabled', false);
+        }
+    }
+
+    // Limpiar archivo seleccionado
+    function clearFile() {
+        document.getElementById('archivo_excel').value = '';
+        $('#dropzone').removeClass('hidden');
+        $('#file-info').addClass('hidden');
+        $('#btnProcesarExcel').prop('disabled', true);
+    }
 </script>
 
 <style>
-/* Estilos para Select2 */
-.select2-container--default .select2-selection--single {
-    border: 2px solid #e5e7eb !important;
-    border-radius: 0.75rem !important;
-    padding: 0.75rem !important;
-    height: auto !important;
-}
+    /* Transiciones */
+    .fade-in-up {
+        animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
 
-.select2-container--default .select2-selection--single:focus {
-    border-color: #3b82f6 !important;
-}
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(16px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 
-.select2-container--default .select2-selection--single .select2-selection__arrow {
-    height: 100% !important;
-}
+    /* Estilos personalizados para DataTable de Tailwind */
+    .dataTables_wrapper .dataTables_processing {
+        background: rgba(255, 255, 255, 0.8) !important;
+        color: #4f46e5 !important;
+        font-weight: 700 !important;
+        border-radius: 1rem !important;
+        border: 1px solid #f1f5f9 !important;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05) !important;
+    }
+    
+    table.dataTable.no-footer {
+        border-bottom: 1px solid #f1f5f9 !important;
+    }
 </style>
 {% endblock %}
